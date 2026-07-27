@@ -175,6 +175,7 @@ export default async function ParecerDetailPage({
                   kind: a.kind,
                   fileName: a.fileName,
                   url: a.url,
+                  mimeType: a.mimeType,
                 }))}
                 canEdit={canAct || isRequester}
               />
