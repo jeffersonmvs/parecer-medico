@@ -42,8 +42,14 @@ export default async function PerfilPage() {
             </div>
           </div>
         </div>
-        <div className="mt-4 flex items-center gap-2 border-t border-line pt-4">
+        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-4">
           <LogoutButton />
+          <Link
+            href="/trocar-senha"
+            className="inline-flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-4 py-2.5 text-sm font-semibold transition hover:bg-surface"
+          >
+            Trocar senha
+          </Link>
           <div className="ml-auto flex items-center gap-2 text-sm text-fg-muted">
             Tema <ThemeToggle />
           </div>

@@ -49,9 +49,10 @@ model User {
   email        String   @unique
   crm          String? // conselho regional de medicina
   passwordHash String
-  role         String   @default("MEDICO_PLANTONISTA")
-  status       String   @default("ATIVO") // ATIVO | PENDENTE | BLOQUEADO
-  twoFactor    Boolean  @default(false)
+  role               String  @default("MEDICO_PLANTONISTA")
+  status             String  @default("ATIVO") // ATIVO | PENDENTE | BLOQUEADO
+  mustChangePassword Boolean @default(false)
+  twoFactor          Boolean @default(false)
   createdAt    DateTime @default(now())
 
   specialtyId String?

@@ -3,8 +3,17 @@
 import { useState } from "react";
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
-import { Card, Button, Select, Spinner, Badge, EmptyState } from "@/components/ui";
-import { IconCheck, IconUser } from "@/components/icons";
+import {
+  Card,
+  Button,
+  Input,
+  Field,
+  Select,
+  Spinner,
+  Badge,
+  EmptyState,
+} from "@/components/ui";
+import { IconCheck, IconUser, IconPlus } from "@/components/icons";
 import {
   ROLES,
   ROLE_LABELS,
@@ -39,7 +48,13 @@ const FILTERS = [
   { key: "BLOQUEADO", label: "Bloqueados" },
 ] as const;
 
-export function UserManager({ specialties }: { specialties: Specialty[] }) {
+export function UserManager({
+  specialties,
+  hospitals,
+}: {
+  specialties: Specialty[];
+  hospitals: { id: string; name: string }[];
+}) {
   const [filter, setFilter] = useState("");
   const { data, mutate, isLoading } = useSWR<{ users: ManagedUser[] }>(
     `/api/admin/users${filter ? `?status=${filter}` : ""}`,
@@ -47,6 +62,43 @@ export function UserManager({ specialties }: { specialties: Specialty[] }) {
     { refreshInterval: 15000 },
   );
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [created, setCreated] = useState<{ email: string; tempPassword: string } | null>(null);
+
+  async function createUser(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setCreating(true);
+    setCreateError(null);
+    setCreated(null);
+    const fd = new FormData(e.currentTarget);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: fd.get("name"),
+          email: fd.get("email"),
+          crm: fd.get("crm"),
+          role: fd.get("role"),
+          specialtyId: fd.get("specialtyId"),
+          hospitalId: fd.get("hospitalId"),
+          status: fd.get("status"),
+        }),
+      });
+      const d = await res.json();
+      if (!res.ok) {
+        setCreateError(d.error ?? "Falha ao criar usuário");
+        return;
+      }
+      setCreated({ email: d.email, tempPassword: d.tempPassword });
+      (e.target as HTMLFormElement).reset();
+      await mutate();
+    } finally {
+      setCreating(false);
+    }
+  }
 
   async function patch(id: string, body: Record<string, unknown>) {
     setSavingId(id);
@@ -67,6 +119,85 @@ export function UserManager({ specialties }: { specialties: Specialty[] }) {
 
   return (
     <div>
+      {/* Add doctor */}
+      <div className="mb-4">
+        {!showAdd ? (
+          <Button variant="secondary" onClick={() => { setShowAdd(true); setCreated(null); }}>
+            <IconPlus size={16} /> Adicionar médico
+          </Button>
+        ) : (
+          <Card className="p-4">
+            <form onSubmit={createUser} className="space-y-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="Nome completo" required>
+                  <Input name="name" placeholder="Dr. Fulano de Tal" required />
+                </Field>
+                <Field label="E-mail" required>
+                  <Input name="email" type="email" placeholder="medico@email.com" required />
+                </Field>
+                <Field label="CRM">
+                  <Input name="crm" placeholder="CRM-CE 00000" />
+                </Field>
+                <Field label="Hospital" required>
+                  <Select name="hospitalId" defaultValue={hospitals[0]?.id ?? ""} required>
+                    {hospitals.map((h) => (
+                      <option key={h.id} value={h.id}>{h.name}</option>
+                    ))}
+                  </Select>
+                </Field>
+                <Field label="Especialidade" required>
+                  <Select name="specialtyId" defaultValue="" required>
+                    <option value="" disabled>Selecione…</option>
+                    {specialties.map((s) => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </Select>
+                </Field>
+                <Field label="Papel">
+                  <Select name="role" defaultValue="MEDICO_PLANTONISTA">
+                    {ROLES.map((r) => (
+                      <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                    ))}
+                  </Select>
+                </Field>
+                <Field label="Status inicial">
+                  <Select name="status" defaultValue="ATIVO">
+                    {USER_STATUSES.map((s) => (
+                      <option key={s} value={s}>{USER_STATUS_LABELS[s]}</option>
+                    ))}
+                  </Select>
+                </Field>
+              </div>
+              {createError ? (
+                <p className="rounded-lg border border-emergency/40 bg-emergency/10 px-3 py-2 text-sm text-emergency">
+                  {createError}
+                </p>
+              ) : null}
+              <div className="flex gap-2">
+                <Button type="submit" disabled={creating}>
+                  {creating ? <Spinner /> : null} Criar conta
+                </Button>
+                <Button type="button" variant="ghost" onClick={() => setShowAdd(false)}>
+                  Fechar
+                </Button>
+              </div>
+            </form>
+            {created ? (
+              <div className="mt-3 rounded-xl border border-routine/40 bg-routine/10 p-3 text-sm">
+                <p className="font-semibold text-routine">Conta criada</p>
+                <p className="mt-1">
+                  <b>{created.email}</b> · senha temporária:{" "}
+                  <code className="rounded bg-surface-2 px-1.5 py-0.5 font-mono">{created.tempPassword}</code>
+                </p>
+                <p className="mt-1 text-xs text-fg-muted">
+                  Repasse ao médico. Ele terá que trocar a senha no primeiro acesso.
+                </p>
+              </div>
+            ) : null}
+          </Card>
+        )}
+      </div>
+
       <div className="mb-4 flex flex-wrap gap-2">
         {FILTERS.map((f) => (
           <button
