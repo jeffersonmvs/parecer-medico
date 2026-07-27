@@ -36,8 +36,9 @@ Native, integrações HL7/FHIR, assinatura ICP-Brasil, 2FA, Bluetooth Beacon.
 
 - **Next.js 15** (App Router) + **React 19** + **TypeScript**
 - **Tailwind CSS v4** (design system próprio, tema claro/escuro)
-- **Prisma** ORM — **SQLite** por padrão (zero-config); trocável para
-  **PostgreSQL** alterando o `provider`/`DATABASE_URL` em `prisma/schema.prisma`
+- **Prisma** ORM sobre **PostgreSQL** (Supabase em produção). As tabelas do
+  sistema ficam isoladas no schema `parecer` (via `?schema=parecer` na
+  `DATABASE_URL`), sem colidir com o schema `public`
 - **jose** (JWT) + **bcryptjs** (hash) + **zod** (validação)
 - **SWR** para dados ao vivo; gráficos em **SVG** feitos à mão (sem dependências)
 
@@ -48,10 +49,15 @@ extração em serviços independentes.
 
 ## Como rodar
 
+Requer um PostgreSQL. Copie `.env.example` para `.env` e ajuste a
+`DATABASE_URL` (pode apontar para o mesmo Supabase usando `?schema=parecer`,
+ou um Postgres local).
+
 ```bash
 npm install
-npm run setup      # gera o client, cria o SQLite e popula dados de demonstração
-npm run dev        # http://localhost:3000
+cp .env.example .env      # edite DATABASE_URL e JWT_SECRET
+npm run setup             # prisma generate + db push + seed
+npm run dev               # http://localhost:3000
 ```
 
 Ou build de produção:
@@ -65,6 +71,18 @@ npm run build && npm start
 - `npm run db:seed` — repovoa os dados de demonstração
 - `npm run db:reset` — recria o banco do zero e popula
 - `npm run typecheck` — checagem de tipos
+
+## Deploy (Vercel + Supabase)
+
+O app roda bem na **Vercel** com **PostgreSQL no Supabase**:
+
+1. Provisione o schema/tabelas no Supabase (o schema `parecer` mantém tudo
+   isolado do `public`).
+2. Na Vercel, configure as variáveis de ambiente `DATABASE_URL` (use o
+   *Transaction pooler*, porta 6543, com `?schema=parecer&pgbouncer=true&connection_limit=1`)
+   e `JWT_SECRET`.
+3. O `binaryTargets` do Prisma já inclui `rhel-openssl-3.0.x` para o runtime
+   serverless da Vercel.
 
 ## Contas de demonstração
 
