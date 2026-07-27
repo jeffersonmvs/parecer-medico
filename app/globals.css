@@ -7,36 +7,38 @@
   Semantic design tokens. Few colors, high contrast, calm.
   Light and dark are both first-class.
 */
+/* PARECER+ brand palette — Neon Medical Cyan on Midnight Navy.
+   Semantic clinical colors (alerta/urgência/sucesso) are reserved. */
 :root {
-  --bg: #f4f6f8;
+  --bg: #eef3f8;
   --surface: #ffffff;
-  --surface-2: #f8fafc;
+  --surface-2: #f1f6fa;
   --fg: #0f172a;
-  --fg-muted: #64748b;
-  --line: #e2e8f0;
-  --primary: #0d7d78; /* teal — clinical, calm */
+  --fg-muted: #5b6b82;
+  --line: #dbe6f0;
+  --primary: #0891b2; /* readable cyan on light ground */
   --primary-fg: #ffffff;
-  --primary-soft: #d7efee;
-  --routine: #0f9d58; /* rotina  */
-  --urgent: #e8a33d; /* urgente */
-  --emergency: #e0483d; /* emergência */
-  --info: #2f6feb;
+  --primary-soft: #d6f3f8;
+  --routine: #059669; /* sucesso / concluído */
+  --urgent: #d97706; /* alerta / alta */
+  --emergency: #dc2626; /* urgência / crítico */
+  --info: #0e9bc4; /* azul elétrico */
 }
 
 .dark {
-  --bg: #0b1220;
-  --surface: #121a2b;
-  --surface-2: #0f1727;
-  --fg: #e8edf5;
-  --fg-muted: #93a1b5;
-  --line: #23304a;
-  --primary: #2bb7b0;
-  --primary-fg: #04211f;
-  --primary-soft: #10312f;
-  --routine: #3ec77e;
-  --urgent: #f0b45a;
-  --emergency: #f2685c;
-  --info: #5b8cf5;
+  --bg: #0b1220; /* midnight navy, deepened */
+  --surface: #111d34;
+  --surface-2: #0e1830;
+  --fg: #eaf4f6;
+  --fg-muted: #9fb2c8;
+  --line: #22304d;
+  --primary: #3ce6e8; /* neon medical cyan */
+  --primary-fg: #04222b;
+  --primary-soft: #0f2b34;
+  --routine: #10b981; /* sucesso */
+  --urgent: #f59e0b; /* alerta */
+  --emergency: #ef4444; /* urgência */
+  --info: #20c7e8; /* azul elétrico */
 }
 
 @theme inline {
