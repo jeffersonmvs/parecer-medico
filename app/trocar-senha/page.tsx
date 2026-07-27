@@ -12,8 +12,8 @@ export default async function TrocarSenhaPage() {
   const forced = user.mustChangePassword;
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center px-4 py-10">
-      <div className="absolute right-4 top-4">
+    <main className="relative flex min-h-screen items-center justify-center px-4 pb-10 pt-[calc(env(safe-area-inset-top)+2.5rem)]">
+      <div className="absolute right-4 top-[calc(env(safe-area-inset-top)+1rem)]">
         <ThemeToggle />
       </div>
       <div className="w-full max-w-sm">

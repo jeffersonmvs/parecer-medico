@@ -42,7 +42,7 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   return (
-    <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-line bg-surface px-3 py-4 md:flex">
+    <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-line bg-surface px-3 pb-4 pt-[calc(env(safe-area-inset-top)+1rem)] md:flex">
       <div className="flex items-center gap-2 px-2 pb-4">
         <div className="grid h-9 w-9 place-items-center rounded-xl border border-primary/30 bg-primary-soft text-primary shadow-[0_0_18px_rgba(60,230,232,0.25)]">
           <Logo size={20} />
@@ -110,7 +110,7 @@ export function Sidebar({
 
 export function TopBar({ hospital }: { hospital?: string | null }) {
   return (
-    <header className="sticky top-0 z-20 flex items-center justify-between border-b border-line bg-surface/80 px-4 py-3 backdrop-blur md:hidden">
+    <header className="sticky top-0 z-20 flex items-center justify-between border-b border-line bg-surface/80 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur md:hidden">
       <div className="flex min-w-0 items-center gap-2">
         <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-primary/30 bg-primary-soft text-primary">
           <Logo size={17} />
