@@ -1,11 +1,14 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { Card, CardHeader, PageHeader, Avatar, Badge } from "@/components/ui";
 import { LogoutButton } from "@/components/LogoutButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { labelForRole } from "@/lib/constants";
+import { can } from "@/lib/rbac";
 import { formatDateTime } from "@/lib/format";
+import { IconArrowRight, IconAlert } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +48,32 @@ export default async function PerfilPage() {
           </div>
         </div>
       </Card>
+
+      {can(user.role, "escalation.configure") ? (
+        <Card className="mb-5">
+          <CardHeader
+            title="Configurações"
+            subtitle="Ajustes da coordenação / direção"
+          />
+          <div className="p-2">
+            <Link
+              href="/escalonamento"
+              className="flex items-center gap-3 rounded-xl px-3 py-3 transition hover:bg-surface-2"
+            >
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary-soft text-primary">
+                <IconAlert size={20} />
+              </span>
+              <div className="flex-1">
+                <p className="font-medium">Escalonamento automático</p>
+                <p className="text-sm text-fg-muted">
+                  Tempos por especialidade até cada nível
+                </p>
+              </div>
+              <IconArrowRight size={18} className="text-fg-muted" />
+            </Link>
+          </div>
+        </Card>
+      ) : null}
 
       <Card className="mb-5">
         <CardHeader
