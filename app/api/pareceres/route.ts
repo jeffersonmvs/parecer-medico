@@ -25,6 +25,9 @@ export async function GET(req: Request) {
   const scope = url.searchParams.get("scope"); // "mine" | "forme" | "all"
 
   const where: Record<string, unknown> = {};
+  // Scope to the active hospital so multi-hospital users only see the unit
+  // they are operating in.
+  if (user.activeHospitalId) where.hospitalId = user.activeHospitalId;
   if (status && PARECER_STATUSES.includes(status as never))
     where.status = status;
   if (priority && PRIORITIES.includes(priority as never))
@@ -73,7 +76,7 @@ export async function POST(req: Request) {
   }
   const data = parsed.data;
 
-  if (!user.hospitalId) {
+  if (!user.activeHospitalId) {
     return badRequest("Usuário sem hospital vinculado");
   }
   if (!user.specialtyId) {
@@ -93,7 +96,7 @@ export async function POST(req: Request) {
         clinicalSummary: data.clinicalSummary,
         priority: data.priority,
         status: "SOLICITADO",
-        hospitalId: user.hospitalId!,
+        hospitalId: user.activeHospitalId!,
         requestingSpecialtyId: user.specialtyId!,
         requestedSpecialtyId: data.requestedSpecialtyId,
         requesterId: user.id,
@@ -119,9 +122,17 @@ export async function POST(req: Request) {
     request: req,
   });
 
-  // Notify (push) the doctors of the requested specialty.
+  // Notify (push) the doctors of the requested specialty who belong to the
+  // same hospital as the parecer.
   const targets = await prisma.user.findMany({
-    where: { specialtyId: data.requestedSpecialtyId, id: { not: user.id } },
+    where: {
+      specialtyId: data.requestedSpecialtyId,
+      id: { not: user.id },
+      OR: [
+        { hospitalId: user.activeHospitalId },
+        { hospitals: { some: { hospitalId: user.activeHospitalId! } } },
+      ],
+    },
     select: { id: true },
   });
   await sendPushToUsers(

@@ -25,10 +25,11 @@ export default async function AppLayout({
           name: user.name,
           role: user.role,
           specialty: user.specialty?.name,
+          hospital: user.activeHospitalName,
         }}
       />
       <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar />
+        <TopBar hospital={user.activeHospitalName} />
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-24 pt-5 md:px-8 md:pb-10">
           {children}
         </main>

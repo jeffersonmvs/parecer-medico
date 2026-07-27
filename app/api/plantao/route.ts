@@ -11,17 +11,21 @@ export async function GET() {
   if ("response" in auth) return auth.response;
   const { user } = auth;
 
+  const hospitalId = user.activeHospitalId ?? undefined;
   const [specialties, activeShifts, openPareceres] = await Promise.all([
     prisma.specialty.findMany({ orderBy: { name: "asc" } }),
     prisma.shift.findMany({
-      where: { endedAt: null },
+      where: { endedAt: null, ...(hospitalId ? { hospitalId } : {}) },
       include: {
         user: { select: { id: true, name: true, role: true, crm: true } },
       },
       orderBy: { startedAt: "asc" },
     }),
     prisma.parecer.findMany({
-      where: { status: { in: OPEN_STATUSES } },
+      where: {
+        status: { in: OPEN_STATUSES },
+        ...(hospitalId ? { hospitalId } : {}),
+      },
       select: {
         requestedSpecialtyId: true,
         createdAt: true,
@@ -79,7 +83,7 @@ export async function GET() {
           specialtyId: myShift.specialtyId,
         }
       : null,
-    canCheckIn: Boolean(user.specialtyId && user.hospitalId),
+    canCheckIn: Boolean(user.specialtyId && user.activeHospitalId),
   });
 }
 
@@ -104,13 +108,13 @@ export async function POST(req: Request) {
 
   if (input.action === "checkin") {
     if (current) return badRequest("Você já está em plantão");
-    if (!user.specialtyId || !user.hospitalId)
+    if (!user.specialtyId || !user.activeHospitalId)
       return badRequest("Perfil sem especialidade/hospital vinculados");
     const shift = await prisma.shift.create({
       data: {
         userId: user.id,
         specialtyId: user.specialtyId,
-        hospitalId: user.hospitalId,
+        hospitalId: user.activeHospitalId,
         status: "AVAILABLE",
       },
     });

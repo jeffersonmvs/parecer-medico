@@ -26,12 +26,14 @@ export default async function InicioPage() {
 
   const firstName = user.name.replace(/^(Dr[a]?\.?\s*)/i, "").split(" ")[0];
 
+  const hospitalId = user.activeHospitalId ?? undefined;
   const [forMe, myShift, notices] = await Promise.all([
     user.specialtyId
       ? prisma.parecer.findMany({
           where: {
             requestedSpecialtyId: user.specialtyId,
             status: { in: OPEN_STATUSES },
+            ...(hospitalId ? { hospitalId } : {}),
           },
           include: parecerListInclude,
           orderBy: { createdAt: "desc" },
@@ -47,7 +49,7 @@ export default async function InicioPage() {
   ]);
 
   const openCalls = await prisma.institutionalCall.count({
-    where: { status: "ABERTO" },
+    where: { status: "ABERTO", ...(hospitalId ? { hospitalId } : {}) },
   });
 
   return (

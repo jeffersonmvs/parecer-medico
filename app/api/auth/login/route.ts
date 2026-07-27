@@ -7,6 +7,7 @@ import {
   setSessionCookie,
 } from "@/lib/auth";
 import { audit } from "@/lib/audit";
+import { listUserHospitals } from "@/lib/hospital";
 
 const schema = z.object({
   email: z.string().email(),
@@ -55,11 +56,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: msg }, { status: 403 });
   }
 
+  // Resolve which hospitals this doctor may operate in. With more than one,
+  // the session is issued without an active hospital and the client shows a
+  // picker (POST /api/auth/select-hospital). With one (or none), it is set
+  // straight away.
+  const hospitals = await listUserHospitals(user.id);
+  const single = hospitals.length <= 1 ? hospitals[0] : undefined;
+
   const token = await signSession({
     sub: user.id,
     email: user.email,
     role: user.role,
     name: user.name,
+    hid: single?.id,
+    hname: single?.name,
   });
   await setSessionCookie(token);
   await audit({
@@ -73,5 +83,7 @@ export async function POST(req: Request) {
   return NextResponse.json({
     ok: true,
     user: { id: user.id, name: user.name, role: user.role },
+    needsHospital: hospitals.length > 1,
+    hospitals: hospitals.length > 1 ? hospitals : [],
   });
 }

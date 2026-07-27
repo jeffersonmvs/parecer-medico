@@ -6,6 +6,8 @@ import { Card, CardHeader, PageHeader, Avatar, Badge } from "@/components/ui";
 import { LogoutButton } from "@/components/LogoutButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { PushToggle } from "@/components/PushToggle";
+import { HospitalSwitcher } from "@/components/HospitalSwitcher";
+import { listUserHospitals } from "@/lib/hospital";
 import { labelForRole } from "@/lib/constants";
 import { can } from "@/lib/rbac";
 import { formatDateTime } from "@/lib/format";
@@ -17,11 +19,14 @@ export default async function PerfilPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const recentAudit = await prisma.auditLog.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: "desc" },
-    take: 8,
-  });
+  const [recentAudit, hospitals] = await Promise.all([
+    prisma.auditLog.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      take: 8,
+    }),
+    listUserHospitals(user.id),
+  ]);
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -54,6 +59,21 @@ export default async function PerfilPage() {
             Tema <ThemeToggle />
           </div>
         </div>
+      </Card>
+
+      <Card className="mb-5">
+        <CardHeader
+          title="Hospital"
+          subtitle={
+            hospitals.length > 1
+              ? "Você atua em mais de uma unidade — troque quando precisar"
+              : "Unidade em que você está atuando"
+          }
+        />
+        <HospitalSwitcher
+          hospitals={hospitals}
+          activeId={user.activeHospitalId}
+        />
       </Card>
 
       {can(user.role, "escalation.configure") || can(user.role, "users.manage") ? (

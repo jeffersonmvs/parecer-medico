@@ -19,6 +19,8 @@ export type SessionPayload = {
   email: string;
   role: string;
   name: string;
+  hid?: string; // active hospital id
+  hname?: string; // active hospital name (for display)
 };
 
 export async function hashPassword(plain: string): Promise<string> {
@@ -67,18 +69,32 @@ export async function clearSessionCookie(): Promise<void> {
   store.delete(SESSION_COOKIE);
 }
 
-/** Reads and verifies the session cookie, then loads the full user. */
-export async function getCurrentUser() {
+/** Reads and verifies the session cookie, returning the raw payload. */
+export async function getSession(): Promise<SessionPayload | null> {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  const payload = await verifySession(token);
+  return verifySession(token);
+}
+
+/**
+ * Reads and verifies the session cookie, then loads the full user. The
+ * returned object also carries the *active hospital* chosen at login
+ * (`activeHospitalId`/`activeHospitalName`). It falls back to the user's own
+ * hospital when the session has no active hospital (single-hospital users and
+ * legacy sessions), so every screen has a hospital to scope by.
+ */
+export async function getCurrentUser() {
+  const payload = await getSession();
   if (!payload) return null;
   const user = await prisma.user.findUnique({
     where: { id: payload.sub },
     include: { specialty: true, hospital: true },
   });
-  return user;
+  if (!user) return null;
+  const activeHospitalId = payload.hid ?? user.hospitalId ?? null;
+  const activeHospitalName = payload.hname ?? user.hospital?.name ?? null;
+  return Object.assign(user, { activeHospitalId, activeHospitalName });
 }
 
 export { SESSION_COOKIE };
