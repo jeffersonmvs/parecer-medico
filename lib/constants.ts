@@ -27,18 +27,39 @@ export const ROLE_LABELS: Record<Role, string> = {
 export const PRIORITIES = ["ROTINA", "URGENTE", "EMERGENCIA"] as const;
 export type Priority = (typeof PRIORITIES)[number];
 
-export const PRIORITY_LABELS: Record<Priority, string> = {
+// Classificação especial para solicitação de leito de UTI.
+export const LEITO_UTI = "LEITO_UTI";
+
+export const PRIORITY_LABELS: Record<string, string> = {
   ROTINA: "Rotina",
   URGENTE: "Urgente",
   EMERGENCIA: "Emergência",
+  LEITO_UTI: "UTI / Solicitação de Leito",
 };
 
 // Target response time per priority, in minutes (drives SLA/heat).
-export const PRIORITY_SLA_MINUTES: Record<Priority, number> = {
+export const PRIORITY_SLA_MINUTES: Record<string, number> = {
   ROTINA: 720,
   URGENTE: 60,
   EMERGENCIA: 15,
 };
+
+// Tipo de resposta de cada especialidade em um hospital.
+export const SPECIALTY_MODES = ["URGENCIA", "CONSULTA", "LEITO"] as const;
+export type SpecialtyMode = (typeof SPECIALTY_MODES)[number];
+
+export const SPECIALTY_MODE_LABELS: Record<SpecialtyMode, string> = {
+  URGENCIA: "Urgência (plantão)",
+  CONSULTA: "Consultoria (rotina)",
+  LEITO: "UTI / Leito",
+};
+
+// Classificações de prioridade permitidas conforme o tipo de resposta.
+export function prioritiesForMode(mode: string): string[] {
+  if (mode === "CONSULTA") return ["ROTINA"];
+  if (mode === "LEITO") return [LEITO_UTI];
+  return ["ROTINA", "URGENTE", "EMERGENCIA"];
+}
 
 export const PARECER_STATUSES = [
   "SOLICITADO",

@@ -15,6 +15,7 @@ import {
   EmptyState,
 } from "@/components/ui";
 import { IconPlus, IconCheck, IconHospital } from "@/components/icons";
+import { SPECIALTY_MODES, SPECIALTY_MODE_LABELS } from "@/lib/constants";
 
 type Doctor = {
   id: string;
@@ -28,6 +29,7 @@ type HS = {
   specialtyId: string;
   specialty: SpecialtyRef;
   active: boolean;
+  mode: string;
   coordinatorId: string | null;
   renotifyMin: number;
   secondMin: number;
@@ -264,6 +266,7 @@ function SpecialtyCard({
   onChanged: () => void;
 }) {
   const [coordinatorId, setCoordinatorId] = useState(hs.coordinatorId ?? "");
+  const [mode, setMode] = useState(hs.mode ?? "URGENCIA");
   const [responders, setResponders] = useState<Set<string>>(
     new Set(hs.responderIds),
   );
@@ -293,6 +296,7 @@ function SpecialtyCard({
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          mode,
           coordinatorId: coordinatorId || null,
           responderIds: [...responders],
           renotifyMin: t.renotifyMin,
@@ -338,6 +342,23 @@ function SpecialtyCard({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div>
+          <Field label="Tipo de resposta">
+            <Select value={mode} onChange={(e) => setMode(e.target.value)}>
+              {SPECIALTY_MODES.map((m) => (
+                <option key={m} value={m}>
+                  {SPECIALTY_MODE_LABELS[m]}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <p className="mb-3 mt-1 text-[11px] text-fg-muted">
+            {mode === "CONSULTA"
+              ? "Só “Rotina”; notifica 1x e escala a coordenador/direção pelo prazo abaixo."
+              : mode === "LEITO"
+                ? "Classificação única “UTI / Solicitação de Leito”."
+                : "Rotina / Urgente / Emergência, com escalonamento por minutos."}
+          </p>
+
           <Field label="Coordenador da especialidade">
             <Select
               value={coordinatorId}

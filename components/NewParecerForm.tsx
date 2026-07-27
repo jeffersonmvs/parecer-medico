@@ -5,12 +5,19 @@ import { useRouter } from "next/navigation";
 import { Button, Field, Input, Textarea, Select } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import {
-  PRIORITIES,
   PRIORITY_LABELS,
   PRIORITY_SLA_MINUTES,
+  prioritiesForMode,
 } from "@/lib/constants";
 
-type Specialty = { id: string; name: string; code: string };
+type Specialty = { id: string; name: string; code: string; mode: string };
+
+const TONE: Record<string, string> = {
+  EMERGENCIA: "emergency",
+  URGENTE: "urgent",
+  ROTINA: "routine",
+  LEITO_UTI: "info",
+};
 
 export function NewParecerForm({
   specialties,
@@ -20,10 +27,21 @@ export function NewParecerForm({
   ownSpecialtyName: string | null;
 }) {
   const router = useRouter();
+  const [specialtyId, setSpecialtyId] = useState("");
+  const selected = specialties.find((s) => s.id === specialtyId);
+  const allowed = prioritiesForMode(selected?.mode ?? "URGENCIA");
   const [priority, setPriority] = useState("URGENTE");
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(false);
+
+  // Ao trocar a especialidade, ajusta a classificação para uma opção válida.
+  function pickSpecialty(id: string) {
+    setSpecialtyId(id);
+    const mode = specialties.find((s) => s.id === id)?.mode ?? "URGENCIA";
+    const opts = prioritiesForMode(mode);
+    setPriority((cur) => (opts.includes(cur) ? cur : opts[0]));
+  }
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -35,7 +53,7 @@ export function NewParecerForm({
       patientName: String(fd.get("patientName") || ""),
       patientRecord: String(fd.get("patientRecord") || ""),
       bed: String(fd.get("bed") || ""),
-      requestedSpecialtyId: String(fd.get("requestedSpecialtyId") || ""),
+      requestedSpecialtyId: specialtyId,
       diagnosis: String(fd.get("diagnosis") || ""),
       reason: String(fd.get("reason") || ""),
       clinicalSummary: String(fd.get("clinicalSummary") || ""),
@@ -66,20 +84,52 @@ export function NewParecerForm({
 
   return (
     <form onSubmit={submit} className="space-y-5">
-      {/* Priority — big, thumb-friendly segmented control */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Especialidade solicitada" required>
+          <Select
+            value={specialtyId}
+            onChange={(e) => pickSpecialty(e.target.value)}
+            required
+          >
+            <option value="" disabled>
+              Selecione…
+            </option>
+            {specialties.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field
+          label="Especialidade solicitante"
+          hint="Definida pelo seu perfil"
+        >
+          <Input value={ownSpecialtyName ?? "—"} disabled />
+        </Field>
+      </div>
+
+      {/* Classificação — depende do tipo de resposta da especialidade */}
       <div>
         <span className="mb-2 block text-sm font-medium">
-          Classificação de prioridade
+          Classificação
         </span>
-        <div className="grid grid-cols-3 gap-2">
-          {PRIORITIES.map((p) => {
+        <div
+          className={cn(
+            "grid gap-2",
+            allowed.length === 1
+              ? "grid-cols-1"
+              : allowed.length === 2
+                ? "grid-cols-2"
+                : "grid-cols-3",
+          )}
+        >
+          {allowed.map((p) => {
             const active = priority === p;
-            const tone =
-              p === "EMERGENCIA"
-                ? "emergency"
-                : p === "URGENTE"
-                  ? "urgent"
-                  : "routine";
+            const tone = TONE[p] ?? "routine";
+            const showMeta =
+              (selected?.mode ?? "URGENCIA") === "URGENCIA" &&
+              PRIORITY_SLA_MINUTES[p] != null;
             return (
               <button
                 type="button"
@@ -104,34 +154,24 @@ export function NewParecerForm({
                 >
                   {PRIORITY_LABELS[p]}
                 </span>
-                <span className="mt-0.5 block text-[11px] text-fg-muted">
-                  meta {PRIORITY_SLA_MINUTES[p]}min
-                </span>
+                {showMeta ? (
+                  <span className="mt-0.5 block text-[11px] text-fg-muted">
+                    meta {PRIORITY_SLA_MINUTES[p]}min
+                  </span>
+                ) : null}
               </button>
             );
           })}
         </div>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Especialidade solicitada" required>
-          <Select name="requestedSpecialtyId" defaultValue="" required>
-            <option value="" disabled>
-              Selecione…
-            </option>
-            {specialties.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <Field
-          label="Especialidade solicitante"
-          hint="Definida pelo seu perfil"
-        >
-          <Input value={ownSpecialtyName ?? "—"} disabled />
-        </Field>
+        {selected?.mode === "CONSULTA" ? (
+          <p className="mt-2 text-xs text-fg-muted">
+            Especialidade consultora: responde em rotina, sem prazo de urgência.
+          </p>
+        ) : selected?.mode === "LEITO" ? (
+          <p className="mt-2 text-xs text-fg-muted">
+            Solicitação de leito de UTI.
+          </p>
+        ) : null}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

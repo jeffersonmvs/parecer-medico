@@ -4,9 +4,11 @@ import { prisma } from "@/lib/db";
 import { requireUser, forbidden, badRequest } from "@/lib/api";
 import { can } from "@/lib/rbac";
 import { audit } from "@/lib/audit";
+import { SPECIALTY_MODES } from "@/lib/constants";
 
 const schema = z.object({
   active: z.boolean().optional(),
+  mode: z.enum(SPECIALTY_MODES).optional(),
   coordinatorId: z.string().nullable().optional(),
   renotifyMin: z.number().int().min(1).max(1440).optional(),
   secondMin: z.number().int().min(1).max(1440).optional(),
@@ -49,6 +51,7 @@ export async function PATCH(
       where: { id },
       data: {
         active: d.active ?? undefined,
+        mode: d.mode ?? undefined,
         coordinatorId:
           d.coordinatorId === undefined ? undefined : d.coordinatorId || null,
         renotifyMin: d.renotifyMin ?? undefined,
