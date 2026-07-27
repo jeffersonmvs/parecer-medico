@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+/* Enable class-based dark mode (toggle by adding `.dark` on <html>) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+  Semantic design tokens. Few colors, high contrast, calm.
+  Light and dark are both first-class.
+*/
+:root {
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --fg: #0f172a;
+  --fg-muted: #64748b;
+  --line: #e2e8f0;
+  --primary: #0d7d78; /* teal — clinical, calm */
+  --primary-fg: #ffffff;
+  --primary-soft: #d7efee;
+  --routine: #0f9d58; /* rotina  */
+  --urgent: #e8a33d; /* urgente */
+  --emergency: #e0483d; /* emergência */
+  --info: #2f6feb;
+}
+
+.dark {
+  --bg: #0b1220;
+  --surface: #121a2b;
+  --surface-2: #0f1727;
+  --fg: #e8edf5;
+  --fg-muted: #93a1b5;
+  --line: #23304a;
+  --primary: #2bb7b0;
+  --primary-fg: #04211f;
+  --primary-soft: #10312f;
+  --routine: #3ec77e;
+  --urgent: #f0b45a;
+  --emergency: #f2685c;
+  --info: #5b8cf5;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-line: var(--line);
+  --color-primary: var(--primary);
+  --color-primary-fg: var(--primary-fg);
+  --color-primary-soft: var(--primary-soft);
+  --color-routine: var(--routine);
+  --color-urgent: var(--urgent);
+  --color-emergency: var(--emergency);
+  --color-info: var(--info);
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+}
+
+* {
+  border-color: var(--line);
+}
+
+html,
+body {
+  background-color: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Thumb-friendly tap targets for use during a shift */
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 999px;
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--emergency) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 10px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+.animate-pulse-ring {
+  animation: pulse-ring 1.8s infinite;
+}
