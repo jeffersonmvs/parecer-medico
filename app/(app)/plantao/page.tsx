@@ -4,13 +4,8 @@ import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { Card, CardHeader, Button, Spinner, PageHeader, Avatar } from "@/components/ui";
 import { ShiftStatusDot } from "@/components/badges";
-import { IconPulse, IconClock } from "@/components/icons";
-import {
-  SHIFT_STATUSES,
-  SHIFT_STATUS_LABELS,
-  labelForRole,
-  type ShiftStatus,
-} from "@/lib/constants";
+import { IconPulse, IconClock, IconCheck } from "@/components/icons";
+import { labelForRole } from "@/lib/constants";
 import { formatDuration } from "@/lib/format";
 import type { SpecialtyBoard } from "@/lib/types";
 import { useState } from "react";
@@ -70,20 +65,9 @@ export default function PlantaoPage() {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <select
-                value={data.myShift.status}
-                onChange={(e) =>
-                  act({ action: "status", status: e.target.value })
-                }
-                disabled={busy}
-                className="rounded-xl border border-line bg-surface-2 px-3 py-2 text-sm"
-              >
-                {SHIFT_STATUSES.filter((s) => s !== "OFF").map((s) => (
-                  <option key={s} value={s}>
-                    {SHIFT_STATUS_LABELS[s as ShiftStatus]}
-                  </option>
-                ))}
-              </select>
+              <span className="inline-flex items-center gap-1.5 rounded-xl border border-routine/40 bg-routine/10 px-3 py-2 text-sm font-semibold text-routine">
+                <IconCheck size={16} /> Disponível
+              </span>
               <Button
                 variant="secondary"
                 disabled={busy}

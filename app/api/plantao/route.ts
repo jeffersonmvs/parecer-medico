@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireUser, badRequest } from "@/lib/api";
 import { audit } from "@/lib/audit";
-import { SHIFT_STATUSES, OPEN_STATUSES } from "@/lib/constants";
+import { OPEN_STATUSES } from "@/lib/constants";
 
 // GET: the live shift board grouped by specialty, plus the caller's shift.
 export async function GET() {
@@ -90,7 +90,6 @@ export async function GET() {
 const schema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("checkin") }),
   z.object({ action: z.literal("checkout") }),
-  z.object({ action: z.literal("status"), status: z.enum(SHIFT_STATUSES) }),
 ]);
 
 export async function POST(req: Request) {
@@ -130,25 +129,17 @@ export async function POST(req: Request) {
 
   if (!current) return badRequest("Você não está em plantão");
 
-  if (input.action === "checkout") {
-    const shift = await prisma.shift.update({
-      where: { id: current.id },
-      data: { endedAt: new Date(), status: "OFF" },
-    });
-    await audit({
-      userId: user.id,
-      action: "shift.checkout",
-      entityType: "Shift",
-      entityId: shift.id,
-      request: req,
-    });
-    return NextResponse.json({ shift });
-  }
-
-  // status change
+  // checkout
   const shift = await prisma.shift.update({
     where: { id: current.id },
-    data: { status: input.status },
+    data: { endedAt: new Date(), status: "OFF" },
+  });
+  await audit({
+    userId: user.id,
+    action: "shift.checkout",
+    entityType: "Shift",
+    entityId: shift.id,
+    request: req,
   });
   return NextResponse.json({ shift });
 }
