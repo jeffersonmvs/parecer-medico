@@ -15,6 +15,7 @@ import {
   IconChart,
   IconUser,
   IconPlus,
+  IconHospital,
 } from "./icons";
 
 const NAV = [
@@ -32,7 +33,12 @@ function isActive(pathname: string, href: string) {
 export function Sidebar({
   user,
 }: {
-  user: { name: string; role: string; specialty?: string | null };
+  user: {
+    name: string;
+    role: string;
+    specialty?: string | null;
+    hospital?: string | null;
+  };
 }) {
   const pathname = usePathname();
   return (
@@ -53,6 +59,15 @@ export function Sidebar({
           <NotificationBell align="left" />
         </div>
       </div>
+
+      {user.hospital ? (
+        <div className="mb-3 flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-3 py-2">
+          <IconHospital size={16} className="shrink-0 text-primary" />
+          <span className="truncate text-xs font-medium" title={user.hospital}>
+            {user.hospital}
+          </span>
+        </div>
+      ) : null}
 
       <Link
         href="/pareceres/novo"
@@ -93,18 +108,25 @@ export function Sidebar({
   );
 }
 
-export function TopBar() {
+export function TopBar({ hospital }: { hospital?: string | null }) {
   return (
     <header className="sticky top-0 z-20 flex items-center justify-between border-b border-line bg-surface/80 px-4 py-3 backdrop-blur md:hidden">
-      <div className="flex items-center gap-2">
-        <div className="grid h-8 w-8 place-items-center rounded-lg border border-primary/30 bg-primary-soft text-primary">
+      <div className="flex min-w-0 items-center gap-2">
+        <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-primary/30 bg-primary-soft text-primary">
           <Logo size={17} />
         </div>
-        <span className="font-bold tracking-wide">
-          PARECER<span className="text-primary">+</span>
-        </span>
+        <div className="min-w-0 leading-tight">
+          <span className="block font-bold tracking-wide">
+            PARECER<span className="text-primary">+</span>
+          </span>
+          {hospital ? (
+            <span className="block truncate text-[11px] text-fg-muted">
+              {hospital}
+            </span>
+          ) : null}
+        </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         <NotificationBell align="right" />
         <ThemeToggle />
       </div>

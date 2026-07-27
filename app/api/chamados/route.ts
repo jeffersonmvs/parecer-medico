@@ -7,8 +7,12 @@ import { audit } from "@/lib/audit";
 export async function GET() {
   const auth = await requireUser();
   if ("response" in auth) return auth.response;
+  const { user } = auth;
 
   const calls = await prisma.institutionalCall.findMany({
+    where: user.activeHospitalId
+      ? { hospitalId: user.activeHospitalId }
+      : {},
     include: { requester: { select: { id: true, name: true } } },
     orderBy: [{ status: "asc" }, { createdAt: "desc" }],
     take: 100,
@@ -27,7 +31,8 @@ export async function POST(req: Request) {
   if ("response" in auth) return auth.response;
   const { user } = auth;
 
-  if (!user.hospitalId) return badRequest("Usuário sem hospital vinculado");
+  if (!user.activeHospitalId)
+    return badRequest("Usuário sem hospital vinculado");
 
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return badRequest("Dados inválidos");
@@ -38,7 +43,7 @@ export async function POST(req: Request) {
       description: parsed.data.description?.trim() || null,
       slaMinutes: parsed.data.slaMinutes,
       requesterId: user.id,
-      hospitalId: user.hospitalId,
+      hospitalId: user.activeHospitalId,
     },
     include: { requester: { select: { id: true, name: true } } },
   });

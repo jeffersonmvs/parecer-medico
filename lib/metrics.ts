@@ -7,9 +7,11 @@ export type DashboardMetrics = Awaited<ReturnType<typeof computeMetrics>>;
 // Computes the operational + executive indicators in one pass over the
 // pareceres. Fine for the MVP scale; a production build would push these
 // aggregations into SQL / a read model.
-export async function computeMetrics() {
+export async function computeMetrics(hospitalId?: string | null) {
+  const scope = hospitalId ? { hospitalId } : {};
   const [pareceres, specialties, activeShifts] = await Promise.all([
     prisma.parecer.findMany({
+      where: scope,
       include: {
         requestedSpecialty: { select: { id: true, name: true, code: true } },
         requestingSpecialty: { select: { id: true, name: true, code: true } },
@@ -17,7 +19,10 @@ export async function computeMetrics() {
       },
     }),
     prisma.specialty.findMany({ select: { id: true, name: true, code: true } }),
-    prisma.shift.findMany({ where: { endedAt: null }, select: { specialtyId: true } }),
+    prisma.shift.findMany({
+      where: { endedAt: null, ...scope },
+      select: { specialtyId: true },
+    }),
   ]);
 
   const open = pareceres.filter((p) => OPEN_STATUSES.includes(p.status as never));

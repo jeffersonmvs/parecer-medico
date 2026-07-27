@@ -14,6 +14,8 @@ const DEMO = [
   { label: "Assistente Clínica", email: "clinica@hospital.dev" },
 ];
 
+type Hospital = { id: string; name: string; city: string | null };
+
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
@@ -21,6 +23,16 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [hospitals, setHospitals] = useState<Hospital[] | null>(null);
+
+  function proceed() {
+    // Route through the welcome interstitial so any institutional notice is
+    // shown briefly before the home screen. An explicit `next` (deep link)
+    // still wins.
+    const next = params.get("next") || "/bemvindo";
+    router.push(next);
+    router.refresh();
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -37,17 +49,92 @@ function LoginForm() {
         setError(data.error ?? "Falha no login");
         return;
       }
-      // Route through the welcome interstitial so any institutional notice is
-      // shown briefly before the home screen. An explicit `next` (deep link)
-      // still wins.
-      const next = params.get("next") || "/bemvindo";
-      router.push(next);
-      router.refresh();
+      if (data.needsHospital && Array.isArray(data.hospitals)) {
+        // Doctor works at more than one hospital — ask which one.
+        setHospitals(data.hospitals);
+        return;
+      }
+      proceed();
     } catch {
       setError("Não foi possível conectar. Tente novamente.");
     } finally {
       setLoading(false);
     }
+  }
+
+  async function chooseHospital(id: string) {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/auth/select-hospital", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hospitalId: id }),
+      });
+      if (!res.ok) {
+        setError("Não foi possível selecionar o hospital.");
+        return;
+      }
+      proceed();
+    } catch {
+      setError("Não foi possível conectar. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (hospitals) {
+    return (
+      <div className="w-full max-w-sm">
+        <div className="mb-8 flex flex-col items-center text-center">
+          <div className="mb-4 grid h-20 w-20 place-items-center rounded-3xl border border-primary/25 bg-gradient-to-br from-[#16324a] to-[#0a1120] shadow-[0_0_46px_rgba(60,230,232,0.32)]">
+            <LogoMark size={60} />
+          </div>
+          <h1 className="text-xl font-bold tracking-wide">Escolha o hospital</h1>
+          <p className="mt-1 text-sm text-fg-muted">
+            Você tem acesso a mais de uma unidade. Selecione onde vai atuar
+            agora.
+          </p>
+        </div>
+
+        {error ? (
+          <p className="mb-3 rounded-xl border border-emergency/40 bg-emergency/10 px-3 py-2 text-sm text-emergency">
+            {error}
+          </p>
+        ) : null}
+
+        <div className="space-y-2">
+          {hospitals.map((h) => (
+            <button
+              key={h.id}
+              type="button"
+              disabled={loading}
+              onClick={() => chooseHospital(h.id)}
+              className="flex w-full items-center justify-between rounded-2xl border border-line bg-surface-2 px-4 py-3.5 text-left transition hover:border-primary hover:bg-primary-soft disabled:opacity-60"
+            >
+              <span>
+                <span className="block font-semibold">{h.name}</span>
+                {h.city ? (
+                  <span className="block text-xs text-fg-muted">{h.city}</span>
+                ) : null}
+              </span>
+              {loading ? <Spinner /> : null}
+            </button>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            setHospitals(null);
+            setError(null);
+          }}
+          className="mt-4 w-full text-center text-sm text-fg-muted hover:text-fg"
+        >
+          Voltar
+        </button>
+      </div>
+    );
   }
 
   function quickFill(demoEmail: string) {

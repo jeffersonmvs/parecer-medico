@@ -59,6 +59,15 @@ export const IconPlus = (p: Props) => (
   </svg>
 );
 
+export const IconHospital = (p: Props) => (
+  <svg {...base(p)}>
+    <path d="M4 21V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14" />
+    <path d="M2 21h20" />
+    <path d="M12 8v6M9 11h6" />
+    <path d="M9 21v-4h6v4" />
+  </svg>
+);
+
 export const IconSparkles = (p: Props) => (
   <svg {...base(p)}>
     <path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z" />

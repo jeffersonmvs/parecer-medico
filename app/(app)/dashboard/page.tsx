@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  const m = await computeMetrics();
+  const m = await computeMetrics(user.activeHospitalId);
   const executive = can(user.role, "dashboard.executive");
 
   return (
