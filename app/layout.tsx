@@ -6,11 +6,18 @@ export const metadata: Metadata = {
   description:
     "Plataforma de gestão de interconsultas, plantões e comunicação clínica hospitalar.",
   manifest: "/manifest.webmanifest",
-  applicationName: "Parecer+",
+  applicationName: "PARECER+",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+    ],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180" }],
+  },
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
-    title: "Parecer+",
+    statusBarStyle: "black-translucent",
+    title: "PARECER+",
   },
 };
 
