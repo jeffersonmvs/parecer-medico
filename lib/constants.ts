@@ -132,3 +132,22 @@ export const NOTICE_CATEGORY_LABELS: Record<NoticeCategory, string> = {
 export function labelForRole(role: string): string {
   return ROLE_LABELS[role as Role] ?? role;
 }
+
+// Institutional calls (chamados rápidos com SLA)
+export const CALL_PRESETS: { type: string; sla: number }[] = [
+  { type: "Vaga UTI", sla: 30 },
+  { type: "Transferência", sla: 60 },
+  { type: "Cirurgia Geral", sla: 30 },
+  { type: "Ortopedia", sla: 30 },
+  { type: "Anestesia", sla: 20 },
+  { type: "Avaliação multiprofissional", sla: 120 },
+];
+
+export const CALL_STATUSES = ["ABERTO", "ATENDIDO", "CANCELADO"] as const;
+export type CallStatus = (typeof CALL_STATUSES)[number];
+
+export const CALL_STATUS_LABELS: Record<CallStatus, string> = {
+  ABERTO: "Aberto",
+  ATENDIDO: "Atendido",
+  CANCELADO: "Cancelado",
+};
