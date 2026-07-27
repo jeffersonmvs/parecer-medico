@@ -1,0 +1,230 @@
+// Hospital Clinical Workflow — data model
+//
+// Uses SQLite by default for a zero-config local run. To target the
+// PostgreSQL described in the spec, change `provider` to "postgresql"
+// and point DATABASE_URL at your instance — the schema is compatible.
+// Enum-like fields are stored as String and constrained in the app layer
+// (lib/constants.ts) so the schema stays portable across both engines.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Hospital {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  users     User[]
+  pareceres Parecer[]
+  shifts    Shift[]
+  calls     InstitutionalCall[]
+}
+
+model Specialty {
+  id   String @id @default(cuid())
+  name String @unique
+  code String @unique
+
+  members            User[]
+  requestedPareceres Parecer[] @relation("RequestedSpecialty")
+  requestingPareceres Parecer[] @relation("RequestingSpecialty")
+  shifts             Shift[]
+  escalation         EscalationConfig?
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  crm          String? // conselho regional de medicina
+  passwordHash String
+  role         String   @default("MEDICO_PLANTONISTA")
+  twoFactor    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  specialtyId String?
+  specialty   Specialty? @relation(fields: [specialtyId], references: [id])
+
+  hospitalId String?
+  hospital   Hospital? @relation(fields: [hospitalId], references: [id])
+
+  requestedPareceres Parecer[]      @relation("Requester")
+  assignedPareceres  Parecer[]      @relation("Assignee")
+  events             ParecerEvent[]
+  messages           Message[]
+  attachments        Attachment[]
+  shifts             Shift[]
+  notices            Notice[]
+  auditLogs          AuditLog[]
+  calls              InstitutionalCall[]
+}
+
+// The clinical ticket. This is the heart of the system.
+model Parecer {
+  id            String   @id @default(cuid())
+  code          String   @unique // human-facing ticket number, e.g. PAR-000123
+  patientName   String
+  patientRecord String // número do prontuário
+  bed           String? // leito
+  diagnosis     String // hipótese diagnóstica
+  reason        String // motivo da solicitação
+  clinicalSummary String // resumo clínico
+  priority      String   @default("ROTINA") // ROTINA | URGENTE | EMERGENCIA
+  status        String   @default("SOLICITADO")
+  opinion       String? // texto do parecer realizado
+
+  hospitalId String
+  hospital   Hospital @relation(fields: [hospitalId], references: [id])
+
+  requestingSpecialtyId String
+  requestingSpecialty   Specialty @relation("RequestingSpecialty", fields: [requestingSpecialtyId], references: [id])
+
+  requestedSpecialtyId String
+  requestedSpecialty   Specialty @relation("RequestedSpecialty", fields: [requestedSpecialtyId], references: [id])
+
+  requesterId String
+  requester   User   @relation("Requester", fields: [requesterId], references: [id])
+
+  assigneeId String?
+  assignee   User?   @relation("Assignee", fields: [assigneeId], references: [id])
+
+  escalationLevel Int      @default(0) // 0=none .. 3=director
+  createdAt       DateTime @default(now())
+  acceptedAt      DateTime?
+  completedAt     DateTime?
+  updatedAt       DateTime @updatedAt
+
+  events      ParecerEvent[]
+  messages    Message[]
+  attachments Attachment[]
+
+  @@index([status])
+  @@index([requestedSpecialtyId])
+}
+
+// Immutable timeline of everything that happened to a parecer.
+model ParecerEvent {
+  id         String   @id @default(cuid())
+  parecerId  String
+  parecer    Parecer  @relation(fields: [parecerId], references: [id], onDelete: Cascade)
+  type       String // STATUS | NOTE | ATTACHMENT | ESCALATION | PRIORITY
+  fromStatus String?
+  toStatus   String?
+  note       String?
+  location   String?
+  durationMs Int? // time spent in the previous state
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@index([parecerId])
+}
+
+model Attachment {
+  id        String   @id @default(cuid())
+  parecerId String
+  parecer   Parecer  @relation(fields: [parecerId], references: [id], onDelete: Cascade)
+  kind      String // LAB | XRAY | CT | MRI | US | PHOTO | VIDEO | DOC
+  fileName  String
+  mimeType  String?
+  url       String // in a real deployment this is an S3-compatible object URL
+  size      Int?
+  uploadedById String?
+  uploadedBy   User?  @relation(fields: [uploadedById], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([parecerId])
+}
+
+// Chat bound to a clinical case — never detached from the patient.
+model Message {
+  id        String   @id @default(cuid())
+  parecerId String
+  parecer   Parecer  @relation(fields: [parecerId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id])
+  body      String
+  type      String   @default("TEXT") // TEXT | IMAGE | FILE | AUDIO
+  attachmentUrl String?
+  pinned    Boolean  @default(false)
+  replyToId String?
+  deliveredAt DateTime?
+  readAt      DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([parecerId])
+}
+
+// A check-in session (plantão).
+model Shift {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  specialtyId String
+  specialty   Specialty @relation(fields: [specialtyId], references: [id])
+  hospitalId  String
+  hospital    Hospital @relation(fields: [hospitalId], references: [id])
+  status      String   @default("AVAILABLE") // AVAILABLE | SURGERY | PROCEDURE | AWAY | RESTING | OFF
+  startedAt   DateTime @default(now())
+  endedAt     DateTime?
+
+  @@index([specialtyId])
+}
+
+model Notice {
+  id        String   @id @default(cuid())
+  title     String
+  body      String
+  category  String   @default("COMUNICADO") // COMUNICADO | PROTOCOLO | ESCALA | TREINAMENTO | URGENTE
+  urgent    Boolean  @default(false)
+  attachmentUrl String?
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model InstitutionalCall {
+  id          String   @id @default(cuid())
+  type        String // e.g. "Vaga UTI", "Transferência", "Cirurgia Geral"
+  description String?
+  slaMinutes  Int      @default(30)
+  status      String   @default("ABERTO") // ABERTO | ATENDIDO | CANCELADO
+  requesterId String
+  requester   User     @relation(fields: [requesterId], references: [id])
+  hospitalId  String
+  hospital    Hospital @relation(fields: [hospitalId], references: [id])
+  createdAt   DateTime @default(now())
+  resolvedAt  DateTime?
+}
+
+// Configurable escalation timings per specialty (all in minutes).
+model EscalationConfig {
+  id             String   @id @default(cuid())
+  specialtyId    String   @unique
+  specialty      Specialty @relation(fields: [specialtyId], references: [id])
+  renotifyAfter  Int      @default(5)  // re-notify same doctor
+  reassignAfter  Int      @default(10) // send to another doctor of the specialty
+  coordinatorAfter Int    @default(20) // send to coordinator
+  directorAfter  Int      @default(30) // send to clinical director
+}
+
+// Append-only audit trail. Rows are never updated or deleted by the app.
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String
+  entityType String?
+  entityId   String?
+  ip         String?
+  device     String?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+}
