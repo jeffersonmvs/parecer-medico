@@ -51,6 +51,17 @@ export type ShiftEntry = {
   user: { id: string; name: string; role: string; crm: string | null };
 };
 
+export type InstitutionalCall = {
+  id: string;
+  type: string;
+  description: string | null;
+  slaMinutes: number;
+  status: string;
+  createdAt: string;
+  resolvedAt: string | null;
+  requester: Ref;
+};
+
 export type SpecialtyBoard = {
   id: string;
   name: string;

@@ -11,6 +11,7 @@ import {
   IconPulse,
   IconArrowRight,
   IconAlert,
+  IconBell,
 } from "@/components/icons";
 import { OPEN_STATUSES, NOTICE_CATEGORY_LABELS, type NoticeCategory } from "@/lib/constants";
 import { relativeTime } from "@/lib/format";
@@ -45,6 +46,10 @@ export default async function InicioPage() {
     }),
   ]);
 
+  const openCalls = await prisma.institutionalCall.count({
+    where: { status: "ABERTO" },
+  });
+
   return (
     <div>
       <div className="mb-5">
@@ -57,7 +62,7 @@ export default async function InicioPage() {
       </div>
 
       {/* Quick actions */}
-      <div className="mb-6 grid gap-3 sm:grid-cols-2">
+      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Link
           href="/pareceres/novo"
           className="flex items-center gap-3 rounded-2xl bg-primary p-4 text-primary-fg shadow-sm transition hover:opacity-95"
@@ -82,6 +87,25 @@ export default async function InicioPage() {
               {myShift ? "Gerenciar plantão" : "Iniciar plantão"}
             </p>
             <p className="text-sm text-fg-muted">Central de plantão</p>
+          </div>
+        </Link>
+        <Link
+          href="/chamados"
+          className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-4 shadow-sm transition hover:border-primary/50"
+        >
+          <span className="relative grid h-11 w-11 place-items-center rounded-xl bg-primary-soft text-primary">
+            <IconBell size={24} />
+            {openCalls > 0 ? (
+              <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-emergency px-1 text-[11px] font-bold text-white">
+                {openCalls}
+              </span>
+            ) : null}
+          </span>
+          <div>
+            <p className="font-semibold">Chamados</p>
+            <p className="text-sm text-fg-muted">
+              {openCalls > 0 ? `${openCalls} em aberto` : "Solicitações com SLA"}
+            </p>
           </div>
         </Link>
       </div>
