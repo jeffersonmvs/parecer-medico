@@ -8,6 +8,7 @@ import { can } from "@/lib/rbac";
 import { PRIORITIES, PARECER_STATUSES, PRIORITY_LABELS } from "@/lib/constants";
 import { parecerListInclude } from "@/lib/queries";
 import { maybeRunEscalation } from "@/lib/escalation";
+import { level1Targets } from "@/lib/parecer-routing";
 import { sendPushToUsers } from "@/lib/push";
 
 export async function GET(req: Request) {
@@ -100,6 +101,8 @@ export async function POST(req: Request) {
         requestingSpecialtyId: user.specialtyId!,
         requestedSpecialtyId: data.requestedSpecialtyId,
         requesterId: user.id,
+        escalationLevel: 1,
+        lastNotifiedAt: new Date(),
       },
     });
     await tx.parecerEvent.create({
@@ -122,24 +125,17 @@ export async function POST(req: Request) {
     request: req,
   });
 
-  // Notify (push) the doctors of the requested specialty who belong to the
-  // same hospital as the parecer.
-  const targets = await prisma.user.findMany({
-    where: {
-      specialtyId: data.requestedSpecialtyId,
-      id: { not: user.id },
-      OR: [
-        { hospitalId: user.activeHospitalId },
-        { hospitals: { some: { hospitalId: user.activeHospitalId! } } },
-      ],
-    },
-    select: { id: true },
-  });
+  // Level-1 notification: the responders of the requested specialty who are on
+  // shift at this hospital (falls back to the whole responder list).
+  const targets = await level1Targets(
+    user.activeHospitalId!,
+    data.requestedSpecialtyId,
+  );
   await sendPushToUsers(
-    targets.map((t) => t.id),
+    targets.filter((id) => id !== user.id),
     {
       title: `Novo parecer · ${PRIORITY_LABELS[data.priority]}`,
-      body: `${data.patientName} — ${data.reason}`,
+      body: `${parecer.code} · ${data.patientName} — ${data.reason}`,
       url: `/pareceres/${parecer.id}`,
     },
   );
