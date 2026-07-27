@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button, Field, Input, Spinner } from "@/components/ui";
-import { Logo } from "@/components/Logo";
+import { LogoMark } from "@/components/LogoMark";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 const DEMO = [
@@ -55,8 +55,8 @@ function LoginForm() {
   return (
     <div className="w-full max-w-sm">
       <div className="mb-8 flex flex-col items-center text-center">
-        <div className="mb-4 grid h-16 w-16 place-items-center rounded-2xl border border-primary/30 bg-primary-soft text-primary shadow-[0_0_34px_rgba(60,230,232,0.30)]">
-          <Logo size={30} />
+        <div className="mb-4 grid h-24 w-24 place-items-center rounded-3xl border border-primary/25 bg-gradient-to-br from-[#16324a] to-[#0a1120] shadow-[0_0_46px_rgba(60,230,232,0.32)]">
+          <LogoMark size={74} />
         </div>
         <h1 className="text-2xl font-bold tracking-wide">
           PARECER<span className="text-primary">+</span>
