@@ -2,7 +2,8 @@ import Link from "next/link";
 import type { ParecerListItem } from "@/lib/types";
 import { PriorityBadge, StatusBadge } from "./badges";
 import { relativeTime } from "@/lib/format";
-import { IconChat, IconPaperclip, IconClock } from "./icons";
+import { Badge } from "./ui";
+import { IconChat, IconPaperclip, IconClock, IconAlert } from "./icons";
 
 export function ParecerCard({ p }: { p: ParecerListItem }) {
   const emergency = p.priority === "EMERGENCIA" && p.status === "SOLICITADO";
@@ -14,9 +15,14 @@ export function ParecerCard({ p }: { p: ParecerListItem }) {
       }`}
     >
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <PriorityBadge priority={p.priority} />
           <StatusBadge status={p.status} />
+          {p.escalationLevel > 0 ? (
+            <Badge color="emergency">
+              <IconAlert size={12} /> Escalonado
+            </Badge>
+          ) : null}
         </div>
         <span className="font-mono text-[11px] text-fg-muted">{p.code}</span>
       </div>

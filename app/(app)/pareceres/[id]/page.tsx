@@ -9,7 +9,7 @@ import { CaseChat } from "@/components/CaseChat";
 import { Timeline } from "@/components/Timeline";
 import { Attachments } from "@/components/Attachments";
 import { AiAssistant } from "@/components/AiAssistant";
-import { IconArrowRight } from "@/components/icons";
+import { IconArrowRight, IconAlert } from "@/components/icons";
 import { formatDateTime } from "@/lib/format";
 import { can } from "@/lib/rbac";
 import type { ParecerEvent } from "@/lib/types";
@@ -89,6 +89,26 @@ export default async function ParecerDetailPage({
           <p className="font-semibold">{p.requestedSpecialty.name}</p>
         </div>
       </div>
+
+      {/* Escalation banner */}
+      {p.escalationLevel > 0 &&
+      (p.status === "SOLICITADO" || p.status === "RECEBIDO") ? (
+        <div className="mb-5 flex items-center gap-2 rounded-2xl border border-emergency/40 bg-emergency/10 px-4 py-3 text-sm text-emergency">
+          <IconAlert size={18} />
+          <span>
+            {
+              (
+                {
+                  1: "Escalonamento nível 1 — plantonista renotificado.",
+                  2: "Escalonamento nível 2 — outros médicos da especialidade notificados.",
+                  3: "Escalonamento nível 3 — encaminhado ao coordenador da especialidade.",
+                  4: "Escalonamento nível 4 — encaminhado à Direção Clínica.",
+                } as Record<number, string>
+              )[p.escalationLevel]
+            }
+          </span>
+        </div>
+      ) : null}
 
       {/* Actions */}
       <Card className="mb-5 p-4">
