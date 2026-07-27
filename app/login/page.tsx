@@ -37,7 +37,10 @@ function LoginForm() {
         setError(data.error ?? "Falha no login");
         return;
       }
-      const next = params.get("next") || "/inicio";
+      // Route through the welcome interstitial so any institutional notice is
+      // shown briefly before the home screen. An explicit `next` (deep link)
+      // still wins.
+      const next = params.get("next") || "/bemvindo";
       router.push(next);
       router.refresh();
     } catch {
