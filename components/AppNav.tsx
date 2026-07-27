@@ -6,6 +6,7 @@ import { cn } from "@/lib/cn";
 import { labelForRole } from "@/lib/constants";
 import { Avatar } from "./ui";
 import { ThemeToggle } from "./ThemeToggle";
+import { NotificationBell } from "./NotificationBell";
 import {
   IconHome,
   IconClipboard,
@@ -42,6 +43,9 @@ export function Sidebar({
         <div className="leading-tight">
           <p className="text-sm font-bold">Parecer+</p>
           <p className="text-[11px] text-fg-muted">Clinical Workflow</p>
+        </div>
+        <div className="ml-auto">
+          <NotificationBell align="left" />
         </div>
       </div>
 
@@ -93,7 +97,10 @@ export function TopBar() {
         </div>
         <span className="font-bold">Parecer+</span>
       </div>
-      <ThemeToggle />
+      <div className="flex items-center gap-2">
+        <NotificationBell align="right" />
+        <ThemeToggle />
+      </div>
     </header>
   );
 }
