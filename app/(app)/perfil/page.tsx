@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { Card, CardHeader, PageHeader, Avatar, Badge } from "@/components/ui";
 import { LogoutButton } from "@/components/LogoutButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { PushToggle } from "@/components/PushToggle";
 import { labelForRole } from "@/lib/constants";
 import { can } from "@/lib/rbac";
 import { formatDateTime } from "@/lib/format";
@@ -74,6 +75,16 @@ export default async function PerfilPage() {
           </div>
         </Card>
       ) : null}
+
+      <Card className="mb-5">
+        <CardHeader
+          title="Notificações"
+          subtitle="Alertas de novos pareceres e chamados no seu dispositivo"
+        />
+        <div className="p-4">
+          <PushToggle />
+        </div>
+      </Card>
 
       <Card className="mb-5">
         <CardHeader

@@ -66,6 +66,7 @@ model User {
   notices            Notice[]
   auditLogs          AuditLog[]
   calls              InstitutionalCall[]
+  pushSubscriptions  PushSubscription[]
 }
 
 // The clinical ticket. This is the heart of the system.
@@ -215,6 +216,19 @@ model EscalationConfig {
   reassignAfter  Int      @default(10) // send to another doctor of the specialty
   coordinatorAfter Int    @default(20) // send to coordinator
   directorAfter  Int      @default(30) // send to clinical director
+}
+
+// Web Push subscription (one per browser/device per user).
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 // Append-only audit trail. Rows are never updated or deleted by the app.
