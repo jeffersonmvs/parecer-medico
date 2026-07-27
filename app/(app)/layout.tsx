@@ -15,6 +15,7 @@ export default async function AppLayout({
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (user.mustChangePassword) redirect("/trocar-senha");
 
   return (
     <div className="flex min-h-screen">

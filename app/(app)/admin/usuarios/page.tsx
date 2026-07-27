@@ -23,10 +23,16 @@ export default async function UsuariosPage() {
     );
   }
 
-  const specialties = await prisma.specialty.findMany({
-    orderBy: { name: "asc" },
-    select: { id: true, name: true, code: true },
-  });
+  const [specialties, hospitals] = await Promise.all([
+    prisma.specialty.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, code: true },
+    }),
+    prisma.hospital.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+  ]);
 
   return (
     <div>
@@ -34,7 +40,7 @@ export default async function UsuariosPage() {
         title="Gestão de Usuários"
         subtitle="Cadastros, papéis, especialidades e liberação de acesso"
       />
-      <UserManager specialties={specialties} />
+      <UserManager specialties={specialties} hospitals={hospitals} />
     </div>
   );
 }
