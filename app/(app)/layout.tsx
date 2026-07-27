@@ -7,6 +7,7 @@ import {
   MobileFab,
 } from "@/components/AppNav";
 import { ServiceWorker } from "@/components/ServiceWorker";
+import { PushGate } from "@/components/PushGate";
 
 export default async function AppLayout({
   children,
@@ -20,6 +21,7 @@ export default async function AppLayout({
   return (
     <div className="flex min-h-screen">
       <ServiceWorker />
+      <PushGate />
       <Sidebar
         user={{
           name: user.name,
