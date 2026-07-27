@@ -93,23 +93,15 @@ export const ATTACHMENT_KIND_LABELS: Record<AttachmentKind, string> = {
   DOC: "Documento",
 };
 
-export const SHIFT_STATUSES = [
-  "AVAILABLE",
-  "SURGERY",
-  "PROCEDURE",
-  "AWAY",
-  "RESTING",
-  "OFF",
-] as const;
+// Plantão é binário: o profissional está Disponível (em plantão) ou
+// Não disponível (fora do plantão). Sem estados intermediários — o hospital
+// não tem como monitorar "em cirurgia", "em procedimento", etc.
+export const SHIFT_STATUSES = ["AVAILABLE", "OFF"] as const;
 export type ShiftStatus = (typeof SHIFT_STATUSES)[number];
 
 export const SHIFT_STATUS_LABELS: Record<ShiftStatus, string> = {
   AVAILABLE: "Disponível",
-  SURGERY: "Em cirurgia",
-  PROCEDURE: "Em procedimento",
-  AWAY: "Ausente",
-  RESTING: "Em descanso",
-  OFF: "Fora do plantão",
+  OFF: "Não disponível",
 };
 
 export const NOTICE_CATEGORIES = [

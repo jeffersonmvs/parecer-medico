@@ -5,7 +5,6 @@ import {
   SHIFT_STATUS_LABELS,
   type Priority,
   type ParecerStatus,
-  type ShiftStatus,
 } from "@/lib/constants";
 
 export function PriorityBadge({ priority }: { priority: string }) {
@@ -43,22 +42,15 @@ export function StatusBadge({ status }: { status: string }) {
   );
 }
 
-const SHIFT_DOT: Record<string, string> = {
-  AVAILABLE: "bg-routine",
-  SURGERY: "bg-emergency",
-  PROCEDURE: "bg-urgent",
-  AWAY: "bg-fg-muted",
-  RESTING: "bg-info",
-  OFF: "bg-line",
-};
-
 export function ShiftStatusDot({ status }: { status: string }) {
+  // Binary: anything other than OFF means the professional is on shift.
+  const off = status === "OFF";
   return (
     <span className="inline-flex items-center gap-1.5 text-xs text-fg-muted">
       <span
-        className={`inline-block h-2 w-2 rounded-full ${SHIFT_DOT[status] ?? "bg-line"}`}
+        className={`inline-block h-2 w-2 rounded-full ${off ? "bg-line" : "bg-routine"}`}
       />
-      {SHIFT_STATUS_LABELS[status as ShiftStatus] ?? status}
+      {off ? SHIFT_STATUS_LABELS.OFF : SHIFT_STATUS_LABELS.AVAILABLE}
     </span>
   );
 }
