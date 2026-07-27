@@ -13,3 +13,9 @@ export const JWT_SECRET = process.env.JWT_SECRET ?? "";
 // Vercel Cron invocations are recognized by their header and don't need it.
 export const ESCALATION_KEY =
   process.env.ESCALATION_KEY ?? "hcw-escalation-3mug3j";
+
+// Web Push (VAPID). The private key must stay server-side.
+export const VAPID_PRIVATE =
+  process.env.VAPID_PRIVATE ?? "j5zsJL7uu9AErulUmXvgkaiTx6DA94MPtKp6dyMkALw";
+export const VAPID_SUBJECT =
+  process.env.VAPID_SUBJECT ?? "mailto:contato@parecer-medico.vercel.app";

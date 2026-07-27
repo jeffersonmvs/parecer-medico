@@ -5,9 +5,10 @@ import { requireUser, badRequest, forbidden } from "@/lib/api";
 import { audit } from "@/lib/audit";
 import { ticketCode } from "@/lib/parecer";
 import { can } from "@/lib/rbac";
-import { PRIORITIES, PARECER_STATUSES } from "@/lib/constants";
+import { PRIORITIES, PARECER_STATUSES, PRIORITY_LABELS } from "@/lib/constants";
 import { parecerListInclude } from "@/lib/queries";
 import { maybeRunEscalation } from "@/lib/escalation";
+import { sendPushToUsers } from "@/lib/push";
 
 export async function GET(req: Request) {
   const auth = await requireUser();
@@ -117,6 +118,20 @@ export async function POST(req: Request) {
     entityId: parecer.id,
     request: req,
   });
+
+  // Notify (push) the doctors of the requested specialty.
+  const targets = await prisma.user.findMany({
+    where: { specialtyId: data.requestedSpecialtyId, id: { not: user.id } },
+    select: { id: true },
+  });
+  await sendPushToUsers(
+    targets.map((t) => t.id),
+    {
+      title: `Novo parecer · ${PRIORITY_LABELS[data.priority]}`,
+      body: `${data.patientName} — ${data.reason}`,
+      url: `/pareceres/${parecer.id}`,
+    },
+  );
 
   return NextResponse.json({ parecer }, { status: 201 });
 }
