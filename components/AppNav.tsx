@@ -7,6 +7,7 @@ import { labelForRole } from "@/lib/constants";
 import { Avatar } from "./ui";
 import { ThemeToggle } from "./ThemeToggle";
 import { NotificationBell } from "./NotificationBell";
+import { Logo } from "./Logo";
 import {
   IconHome,
   IconClipboard,
@@ -37,12 +38,16 @@ export function Sidebar({
   return (
     <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-line bg-surface px-3 py-4 md:flex">
       <div className="flex items-center gap-2 px-2 pb-4">
-        <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-fg">
-          <IconPulse size={20} />
+        <div className="grid h-9 w-9 place-items-center rounded-xl border border-primary/30 bg-primary-soft text-primary shadow-[0_0_18px_rgba(60,230,232,0.25)]">
+          <Logo size={20} />
         </div>
         <div className="leading-tight">
-          <p className="text-sm font-bold">Parecer+</p>
-          <p className="text-[11px] text-fg-muted">Clinical Workflow</p>
+          <p className="text-sm font-bold tracking-wide">
+            PARECER<span className="text-primary">+</span>
+          </p>
+          <p className="text-[10px] uppercase tracking-[0.18em] text-fg-muted">
+            Comunicação Clínica
+          </p>
         </div>
         <div className="ml-auto">
           <NotificationBell align="left" />
@@ -92,10 +97,12 @@ export function TopBar() {
   return (
     <header className="sticky top-0 z-20 flex items-center justify-between border-b border-line bg-surface/80 px-4 py-3 backdrop-blur md:hidden">
       <div className="flex items-center gap-2">
-        <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-fg">
-          <IconPulse size={18} />
+        <div className="grid h-8 w-8 place-items-center rounded-lg border border-primary/30 bg-primary-soft text-primary">
+          <Logo size={17} />
         </div>
-        <span className="font-bold">Parecer+</span>
+        <span className="font-bold tracking-wide">
+          PARECER<span className="text-primary">+</span>
+        </span>
       </div>
       <div className="flex items-center gap-2">
         <NotificationBell align="right" />

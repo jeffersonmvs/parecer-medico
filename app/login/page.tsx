@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button, Field, Input, Spinner } from "@/components/ui";
-import { IconPulse } from "@/components/icons";
+import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 const DEMO = [
@@ -55,12 +55,14 @@ function LoginForm() {
   return (
     <div className="w-full max-w-sm">
       <div className="mb-8 flex flex-col items-center text-center">
-        <div className="mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-primary text-primary-fg shadow-sm">
-          <IconPulse size={30} />
+        <div className="mb-4 grid h-16 w-16 place-items-center rounded-2xl border border-primary/30 bg-primary-soft text-primary shadow-[0_0_34px_rgba(60,230,232,0.30)]">
+          <Logo size={30} />
         </div>
-        <h1 className="text-2xl font-bold">Parecer+</h1>
-        <p className="mt-1 text-sm text-fg-muted">
-          Comunicação clínica e gestão de pareceres
+        <h1 className="text-2xl font-bold tracking-wide">
+          PARECER<span className="text-primary">+</span>
+        </h1>
+        <p className="mt-1 text-xs uppercase tracking-[0.24em] text-fg-muted">
+          Comunicação Clínica Inteligente
         </p>
       </div>
 
