@@ -26,6 +26,15 @@ usado com rapidez durante o plantão (ações principais em poucos toques).
 | **PWA**: instalável, manifest, service worker (offline shell + handler de push pronto para FCM) | ✅ |
 | **UI**: responsiva (mobile-first), modo claro/escuro, poucos cliques, botões grandes | ✅ |
 
+### Escalonamento automático
+Pareceres sem aceite são escalonados conforme os tempos configuráveis por
+especialidade (`EscalationConfig`): renotificação → outros médicos →
+coordenador → direção. Cada nível registra um evento na linha do tempo e o
+caso exibe o selo "Escalonado". O motor roda de duas formas: um cron diário
+na Vercel (`/api/cron/escalonamento`) e, para reagir sem depender de plano
+pago, um disparo preguiçoso (com _throttle_) a cada consulta da lista de
+pareceres.
+
 ### Escopo futuro (deixado como base arquitetural)
 Escalonamento automático agendado (a config por especialidade já existe no
 schema), upload real para S3, push via Firebase Cloud Messaging, mensagens de

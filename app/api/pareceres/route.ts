@@ -7,11 +7,16 @@ import { ticketCode } from "@/lib/parecer";
 import { can } from "@/lib/rbac";
 import { PRIORITIES, PARECER_STATUSES } from "@/lib/constants";
 import { parecerListInclude } from "@/lib/queries";
+import { maybeRunEscalation } from "@/lib/escalation";
 
 export async function GET(req: Request) {
   const auth = await requireUser();
   if ("response" in auth) return auth.response;
   const { user } = auth;
+
+  // Advance automatic escalation opportunistically (throttled) so the list
+  // reflects overdue pareceres without needing a paid scheduler.
+  await maybeRunEscalation();
 
   const url = new URL(req.url);
   const status = url.searchParams.get("status");

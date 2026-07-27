@@ -11,6 +11,7 @@ export type ParecerListItem = {
   diagnosis: string;
   priority: string;
   status: string;
+  escalationLevel: number;
   createdAt: string;
   acceptedAt: string | null;
   completedAt: string | null;
