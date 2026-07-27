@@ -3,12 +3,13 @@ import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import { prisma } from "./db";
+import { JWT_SECRET } from "./server-secrets";
 
 const SESSION_COOKIE = "hcw_session";
 const SESSION_MAX_AGE = 60 * 60 * 12; // 12h — roughly one shift
 
 function secret(): Uint8Array {
-  const s = process.env.JWT_SECRET;
+  const s = JWT_SECRET || process.env.JWT_SECRET;
   if (!s) throw new Error("JWT_SECRET is not set");
   return new TextEncoder().encode(s);
 }
