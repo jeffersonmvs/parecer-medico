@@ -10,12 +10,27 @@ export default async function NovoParecerPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  // Offer every specialty except the requester's own.
-  const specialties = await prisma.specialty.findMany({
-    where: user.specialtyId ? { id: { not: user.specialtyId } } : {},
-    orderBy: { name: "asc" },
-    select: { id: true, name: true, code: true },
-  });
+  // Offer every specialty except the requester's own, com o tipo de resposta
+  // (modo) configurado no hospital ativo — que define as classificações
+  // de prioridade disponíveis.
+  const [specialtiesRaw, hospitalSpecialties] = await Promise.all([
+    prisma.specialty.findMany({
+      where: user.specialtyId ? { id: { not: user.specialtyId } } : {},
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, code: true },
+    }),
+    user.activeHospitalId
+      ? prisma.hospitalSpecialty.findMany({
+          where: { hospitalId: user.activeHospitalId },
+          select: { specialtyId: true, mode: true },
+        })
+      : Promise.resolve([]),
+  ]);
+  const modeBy = new Map(hospitalSpecialties.map((h) => [h.specialtyId, h.mode]));
+  const specialties = specialtiesRaw.map((s) => ({
+    ...s,
+    mode: modeBy.get(s.id) ?? "URGENCIA",
+  }));
 
   return (
     <div className="mx-auto max-w-2xl">

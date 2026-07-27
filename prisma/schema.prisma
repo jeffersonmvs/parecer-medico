@@ -51,6 +51,13 @@ model HospitalSpecialty {
 
   active Boolean @default(true)
 
+  // Tipo de resposta da especialidade, que define as classificações de
+  // prioridade disponíveis e o comportamento do escalonamento:
+  //   URGENCIA = plantão (Rotina/Urgente/Emergência, escalonamento por minutos)
+  //   CONSULTA = consultoria/rotina (só Rotina, notifica 1x, escalona em 7 dias)
+  //   LEITO    = UTI (só "UTI / Solicitação de Leito")
+  mode String @default("URGENCIA")
+
   // Escalation thresholds (minutes from creation without acceptance).
   renotifyMin  Int @default(5)  // level 1: re-notify on-shift doctors every N min
   secondMin    Int @default(30) // level 2: all specialty doctors at the hospital

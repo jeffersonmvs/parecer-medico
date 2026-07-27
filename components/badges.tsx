@@ -3,7 +3,6 @@ import {
   PRIORITY_LABELS,
   STATUS_LABELS,
   SHIFT_STATUS_LABELS,
-  type Priority,
   type ParecerStatus,
 } from "@/lib/constants";
 
@@ -13,13 +12,15 @@ export function PriorityBadge({ priority }: { priority: string }) {
       ? "emergency"
       : priority === "URGENTE"
         ? "urgent"
-        : "routine";
+        : priority === "LEITO_UTI"
+          ? "info"
+          : "routine";
   return (
     <Badge color={color}>
       {priority === "EMERGENCIA" ? (
         <span className="mr-0.5 inline-block h-1.5 w-1.5 rounded-full bg-emergency" />
       ) : null}
-      {PRIORITY_LABELS[priority as Priority] ?? priority}
+      {PRIORITY_LABELS[priority] ?? priority}
     </Badge>
   );
 }

@@ -62,6 +62,7 @@ export async function GET(
       specialtyId: hs.specialtyId,
       specialty: hs.specialty,
       active: hs.active,
+      mode: hs.mode,
       coordinatorId: hs.coordinatorId,
       renotifyMin: hs.renotifyMin,
       secondMin: hs.secondMin,

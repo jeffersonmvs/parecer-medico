@@ -5,7 +5,12 @@ import { requireUser, badRequest, forbidden } from "@/lib/api";
 import { audit } from "@/lib/audit";
 import { ticketCode } from "@/lib/parecer";
 import { can } from "@/lib/rbac";
-import { PRIORITIES, PARECER_STATUSES, PRIORITY_LABELS } from "@/lib/constants";
+import {
+  PRIORITIES,
+  PARECER_STATUSES,
+  PRIORITY_LABELS,
+  prioritiesForMode,
+} from "@/lib/constants";
 import { parecerListInclude } from "@/lib/queries";
 import { maybeRunEscalation } from "@/lib/escalation";
 import { level1Targets } from "@/lib/parecer-routing";
@@ -57,7 +62,9 @@ const createSchema = z.object({
   diagnosis: z.string().min(2, "Informe a hipótese diagnóstica"),
   reason: z.string().min(2, "Informe o motivo"),
   clinicalSummary: z.string().min(2, "Informe o resumo clínico"),
-  priority: z.enum(PRIORITIES),
+  // Validada contra o modo da especialidade abaixo (Rotina/Urgente/Emergência
+  // ou "UTI / Solicitação de Leito").
+  priority: z.string().min(1),
 });
 
 export async function POST(req: Request) {
@@ -80,6 +87,24 @@ export async function POST(req: Request) {
   if (!user.activeHospitalId) {
     return badRequest("Usuário sem hospital vinculado");
   }
+
+  // Classificação permitida depende do tipo de resposta da especialidade.
+  const hs = await prisma.hospitalSpecialty.findUnique({
+    where: {
+      hospitalId_specialtyId: {
+        hospitalId: user.activeHospitalId,
+        specialtyId: data.requestedSpecialtyId,
+      },
+    },
+    select: { mode: true },
+  });
+  const allowed = prioritiesForMode(hs?.mode ?? "URGENCIA");
+  if (!allowed.includes(data.priority)) {
+    return badRequest("Classificação inválida para esta especialidade", {
+      priority: [`Selecione: ${allowed.map((p) => PRIORITY_LABELS[p]).join(", ")}`],
+    });
+  }
+
   if (!user.specialtyId) {
     return badRequest("Usuário sem especialidade vinculada");
   }

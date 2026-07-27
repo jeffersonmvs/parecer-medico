@@ -136,28 +136,35 @@ export async function runEscalation(): Promise<{ escalated: number }> {
     let lastNotifiedAt = p.lastNotifiedAt;
     let didSomething = false;
 
-    // Re-notify the on-shift group every renotifyMin until accepted.
-    const due =
-      !lastNotifiedAt ||
-      now - lastNotifiedAt.getTime() >= t.renotifyMin * 60000;
-    if (due && level1.length > 0) {
-      await sendPushToUsers(
-        level1,
-        parecerPush(p, "Parecer aguardando aceite"),
-      );
-      lastNotifiedAt = new Date(now);
-      didSomething = true;
-    }
+    // Especialidades consultoras (CONSULTA) notificam apenas uma vez ao criar
+    // e não têm renotificação nem nível 2 — só escalam a coordenador/direção
+    // após o prazo longo (configurado, ex.: 7 dias).
+    const consulta = cfg?.mode === "CONSULTA";
 
-    // Level 2 — all responders of the specialty at the hospital.
-    if (elapsedMin >= t.secondMin && level < 2) {
-      await sendPushToUsers(
-        responderIds,
-        parecerPush(p, "Parecer sem aceite — acionando a especialidade"),
-      );
-      await writeEvent(p.id, 2);
-      level = 2;
-      didSomething = true;
+    if (!consulta) {
+      // Re-notify the on-shift group every renotifyMin until accepted.
+      const due =
+        !lastNotifiedAt ||
+        now - lastNotifiedAt.getTime() >= t.renotifyMin * 60000;
+      if (due && level1.length > 0) {
+        await sendPushToUsers(
+          level1,
+          parecerPush(p, "Parecer aguardando aceite"),
+        );
+        lastNotifiedAt = new Date(now);
+        didSomething = true;
+      }
+
+      // Level 2 — all responders of the specialty at the hospital.
+      if (elapsedMin >= t.secondMin && level < 2) {
+        await sendPushToUsers(
+          responderIds,
+          parecerPush(p, "Parecer sem aceite — acionando a especialidade"),
+        );
+        await writeEvent(p.id, 2);
+        level = 2;
+        didSomething = true;
+      }
     }
 
     // Level 3 — specialty coordinator.
