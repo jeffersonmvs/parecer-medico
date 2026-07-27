@@ -4,7 +4,7 @@ import { jwtVerify } from "jose";
 const SESSION_COOKIE = "hcw_session";
 
 // Public paths that never require a session.
-const PUBLIC = ["/login"];
+const PUBLIC = ["/login", "/registrar"];
 
 async function hasValidSession(req: NextRequest): Promise<boolean> {
   const token = req.cookies.get(SESSION_COOKIE)?.value;

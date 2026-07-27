@@ -129,6 +129,15 @@ export const NOTICE_CATEGORY_LABELS: Record<NoticeCategory, string> = {
   URGENTE: "Urgente",
 };
 
+export const USER_STATUSES = ["ATIVO", "PENDENTE", "BLOQUEADO"] as const;
+export type UserStatus = (typeof USER_STATUSES)[number];
+
+export const USER_STATUS_LABELS: Record<UserStatus, string> = {
+  ATIVO: "Ativo",
+  PENDENTE: "Aguardando liberação",
+  BLOQUEADO: "Bloqueado",
+};
+
 export function labelForRole(role: string): string {
   return ROLE_LABELS[role as Role] ?? role;
 }

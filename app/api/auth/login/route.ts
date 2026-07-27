@@ -39,6 +39,22 @@ export async function POST(req: Request) {
     );
   }
 
+  // Access gating: only released accounts may sign in.
+  if (user.status !== "ATIVO") {
+    await audit({
+      userId: user.id,
+      action: `auth.login.blocked.${user.status}`,
+      entityType: "User",
+      entityId: user.id,
+      request: req,
+    });
+    const msg =
+      user.status === "PENDENTE"
+        ? "Seu cadastro está aguardando liberação pela coordenação."
+        : "Seu acesso foi bloqueado. Procure a administração do PARECER+.";
+    return NextResponse.json({ error: msg }, { status: 403 });
+  }
+
   const token = await signSession({
     sub: user.id,
     email: user.email,

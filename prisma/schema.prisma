@@ -21,12 +21,14 @@ datasource db {
 model Hospital {
   id        String   @id @default(cuid())
   name      String
+  city      String?
   createdAt DateTime @default(now())
 
-  users     User[]
-  pareceres Parecer[]
-  shifts    Shift[]
-  calls     InstitutionalCall[]
+  users       User[]
+  pareceres   Parecer[]
+  shifts      Shift[]
+  calls       InstitutionalCall[]
+  memberships UserHospital[]
 }
 
 model Specialty {
@@ -48,6 +50,7 @@ model User {
   crm          String? // conselho regional de medicina
   passwordHash String
   role         String   @default("MEDICO_PLANTONISTA")
+  status       String   @default("ATIVO") // ATIVO | PENDENTE | BLOQUEADO
   twoFactor    Boolean  @default(false)
   createdAt    DateTime @default(now())
 
@@ -67,6 +70,20 @@ model User {
   auditLogs          AuditLog[]
   calls              InstitutionalCall[]
   pushSubscriptions  PushSubscription[]
+  hospitals          UserHospital[]
+}
+
+// Hospitals a user may log into (the system is multi-hospital).
+model UserHospital {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hospitalId String
+  hospital   Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, hospitalId])
+  @@index([userId])
 }
 
 // The clinical ticket. This is the heart of the system.
