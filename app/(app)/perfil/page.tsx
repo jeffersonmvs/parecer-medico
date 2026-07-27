@@ -9,7 +9,7 @@ import { PushToggle } from "@/components/PushToggle";
 import { labelForRole } from "@/lib/constants";
 import { can } from "@/lib/rbac";
 import { formatDateTime } from "@/lib/format";
-import { IconArrowRight, IconAlert } from "@/components/icons";
+import { IconArrowRight, IconAlert, IconUser } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
 
@@ -50,28 +50,47 @@ export default async function PerfilPage() {
         </div>
       </Card>
 
-      {can(user.role, "escalation.configure") ? (
+      {can(user.role, "escalation.configure") || can(user.role, "users.manage") ? (
         <Card className="mb-5">
           <CardHeader
             title="Configurações"
             subtitle="Ajustes da coordenação / direção"
           />
           <div className="p-2">
-            <Link
-              href="/escalonamento"
-              className="flex items-center gap-3 rounded-xl px-3 py-3 transition hover:bg-surface-2"
-            >
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary-soft text-primary">
-                <IconAlert size={20} />
-              </span>
-              <div className="flex-1">
-                <p className="font-medium">Escalonamento automático</p>
-                <p className="text-sm text-fg-muted">
-                  Tempos por especialidade até cada nível
-                </p>
-              </div>
-              <IconArrowRight size={18} className="text-fg-muted" />
-            </Link>
+            {can(user.role, "users.manage") ? (
+              <Link
+                href="/admin/usuarios"
+                className="flex items-center gap-3 rounded-xl px-3 py-3 transition hover:bg-surface-2"
+              >
+                <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary-soft text-primary">
+                  <IconUser size={20} />
+                </span>
+                <div className="flex-1">
+                  <p className="font-medium">Gestão de usuários</p>
+                  <p className="text-sm text-fg-muted">
+                    Cadastros, papéis e liberação de acesso
+                  </p>
+                </div>
+                <IconArrowRight size={18} className="text-fg-muted" />
+              </Link>
+            ) : null}
+            {can(user.role, "escalation.configure") ? (
+              <Link
+                href="/escalonamento"
+                className="flex items-center gap-3 rounded-xl px-3 py-3 transition hover:bg-surface-2"
+              >
+                <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary-soft text-primary">
+                  <IconAlert size={20} />
+                </span>
+                <div className="flex-1">
+                  <p className="font-medium">Escalonamento automático</p>
+                  <p className="text-sm text-fg-muted">
+                    Tempos por especialidade até cada nível
+                  </p>
+                </div>
+                <IconArrowRight size={18} className="text-fg-muted" />
+              </Link>
+            ) : null}
           </div>
         </Card>
       ) : null}

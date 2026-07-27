@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button, Field, Input, Spinner } from "@/components/ui";
 import { LogoMark } from "@/components/LogoMark";
@@ -99,6 +100,13 @@ function LoginForm() {
           {loading ? "Entrando…" : "Entrar"}
         </Button>
       </form>
+
+      <p className="mt-4 text-center text-sm text-fg-muted">
+        Ainda não tem acesso?{" "}
+        <Link href="/registrar" className="font-medium text-primary hover:underline">
+          Solicitar cadastro
+        </Link>
+      </p>
 
       <div className="mt-6">
         <p className="mb-2 text-center text-xs text-fg-muted">
