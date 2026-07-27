@@ -24,11 +24,59 @@ model Hospital {
   city      String?
   createdAt DateTime @default(now())
 
-  users       User[]
-  pareceres   Parecer[]
-  shifts      Shift[]
-  calls       InstitutionalCall[]
-  memberships UserHospital[]
+  // Clinical director — 4th (last) escalation level for pareceres.
+  directorId String?
+  director   User?   @relation("HospitalDirector", fields: [directorId], references: [id])
+
+  users        User[]
+  pareceres    Parecer[]
+  shifts       Shift[]
+  calls        InstitutionalCall[]
+  memberships  UserHospital[]
+  specialties  HospitalSpecialty[]
+}
+
+// A specialty offered at a given hospital, with its coordinator and the
+// escalation timings used when a parecer for it goes unaccepted.
+model HospitalSpecialty {
+  id          String   @id @default(cuid())
+  hospitalId  String
+  hospital    Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  specialtyId String
+  specialty   Specialty @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+
+  // Coordinator of this specialty at this hospital — 3rd escalation level.
+  coordinatorId String?
+  coordinator   User?  @relation("SpecialtyCoordinator", fields: [coordinatorId], references: [id])
+
+  active Boolean @default(true)
+
+  // Escalation thresholds (minutes from creation without acceptance).
+  renotifyMin  Int @default(5)  // level 1: re-notify on-shift doctors every N min
+  secondMin    Int @default(30) // level 2: all specialty doctors at the hospital
+  coordMin     Int @default(60) // level 3: coordinator
+  directionMin Int @default(90) // level 4: clinical direction
+
+  responders ParecerResponder[]
+  createdAt  DateTime @default(now())
+
+  @@unique([hospitalId, specialtyId])
+  @@index([hospitalId])
+}
+
+// A doctor who answers pareceres for a specialty at a hospital. This is the
+// explicit routing list — e.g. a "cirurgia geral" parecer only reaches the
+// general-surgery responders, not the elective-surgery team.
+model ParecerResponder {
+  id                  String            @id @default(cuid())
+  hospitalSpecialtyId String
+  hospitalSpecialty   HospitalSpecialty @relation(fields: [hospitalSpecialtyId], references: [id], onDelete: Cascade)
+  userId              String
+  user                User              @relation("Responder", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt           DateTime          @default(now())
+
+  @@unique([hospitalSpecialtyId, userId])
+  @@index([userId])
 }
 
 model Specialty {
@@ -41,6 +89,7 @@ model Specialty {
   requestingPareceres Parecer[] @relation("RequestingSpecialty")
   shifts             Shift[]
   escalation         EscalationConfig?
+  hospitals          HospitalSpecialty[]
 }
 
 model User {
@@ -74,6 +123,9 @@ model User {
   calls              InstitutionalCall[]
   pushSubscriptions  PushSubscription[]
   hospitals          UserHospital[]
+  coordinatorOf      HospitalSpecialty[] @relation("SpecialtyCoordinator")
+  responderOf        ParecerResponder[]  @relation("Responder")
+  directorOf         Hospital[]          @relation("HospitalDirector")
 }
 
 // Hospitals a user may log into (the system is multi-hospital).
@@ -118,7 +170,8 @@ model Parecer {
   assigneeId String?
   assignee   User?   @relation("Assignee", fields: [assigneeId], references: [id])
 
-  escalationLevel Int      @default(0) // 0=none .. 3=director
+  escalationLevel Int      @default(0) // 0=none, 1=on-shift, 2=all specialty, 3=coordinator, 4=direction
+  lastNotifiedAt  DateTime? // last time level-1 doctors were (re)notified
   createdAt       DateTime @default(now())
   acceptedAt      DateTime?
   completedAt     DateTime?

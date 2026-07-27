@@ -12,7 +12,7 @@ import { listUserHospitals } from "@/lib/hospital";
 import { labelForRole } from "@/lib/constants";
 import { can } from "@/lib/rbac";
 import { formatDateTime } from "@/lib/format";
-import { IconArrowRight, IconAlert, IconUser } from "@/components/icons";
+import { IconArrowRight, IconAlert, IconUser, IconHospital } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
 
@@ -126,6 +126,23 @@ export default async function PerfilPage() {
                 <IconArrowRight size={18} className="text-fg-muted" />
               </Link>
             ) : null}
+            {can(user.role, "hospital.configure") ? (
+              <Link
+                href="/admin/hospitais"
+                className="flex items-center gap-3 rounded-xl px-3 py-3 transition hover:bg-surface-2"
+              >
+                <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary-soft text-primary">
+                  <IconHospital size={20} />
+                </span>
+                <div className="flex-1">
+                  <p className="font-medium">Configuração de hospitais</p>
+                  <p className="text-sm text-fg-muted">
+                    Especialidades, coordenadores, responsáveis e escalonamento
+                  </p>
+                </div>
+                <IconArrowRight size={18} className="text-fg-muted" />
+              </Link>
+            ) : null}
             {can(user.role, "escalation.configure") ? (
               <Link
                 href="/escalonamento"
@@ -135,9 +152,9 @@ export default async function PerfilPage() {
                   <IconAlert size={20} />
                 </span>
                 <div className="flex-1">
-                  <p className="font-medium">Escalonamento automático</p>
+                  <p className="font-medium">Escalonamento (legado)</p>
                   <p className="text-sm text-fg-muted">
-                    Tempos por especialidade até cada nível
+                    Tempos globais — substituído pela config por hospital
                   </p>
                 </div>
                 <IconArrowRight size={18} className="text-fg-muted" />

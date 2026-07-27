@@ -11,7 +11,8 @@ export type Capability =
   | "dashboard.executive"
   | "escalation.configure"
   | "shift.manageOthers"
-  | "users.manage";
+  | "users.manage"
+  | "hospital.configure";
 
 const MATRIX: Record<Role, Capability[]> = {
   ADMIN: [
@@ -23,6 +24,7 @@ const MATRIX: Record<Role, Capability[]> = {
     "escalation.configure",
     "shift.manageOthers",
     "users.manage",
+    "hospital.configure",
   ],
   DIRECAO_CLINICA: [
     "parecer.create",
@@ -32,6 +34,7 @@ const MATRIX: Record<Role, Capability[]> = {
     "dashboard.executive",
     "escalation.configure",
     "shift.manageOthers",
+    "hospital.configure",
   ],
   DIRECAO_TECNICA: [
     "notice.publish",
