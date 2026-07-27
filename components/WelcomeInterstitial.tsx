@@ -45,7 +45,7 @@ export function WelcomeInterstitial({ notice }: { notice: Notice }) {
   const pct = ((SECONDS - left) / SECONDS) * 100;
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center px-4 py-10">
+    <main className="relative flex min-h-screen items-center justify-center px-4 pb-10 pt-[calc(env(safe-area-inset-top)+2.5rem)]">
       <div className="w-full max-w-md">
         <div className="mb-6 flex flex-col items-center text-center">
           <div className="mb-4 grid h-20 w-20 place-items-center rounded-3xl border border-primary/25 bg-gradient-to-br from-[#16324a] to-[#0a1120] shadow-[0_0_46px_rgba(60,230,232,0.32)]">

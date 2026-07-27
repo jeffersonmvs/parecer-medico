@@ -48,6 +48,8 @@ model User {
   name         String
   email        String   @unique
   crm          String? // conselho regional de medicina
+  rqe          String? // registro de qualificação de especialista
+  phone        String? // telefone/WhatsApp de contato
   passwordHash String
   role               String  @default("MEDICO_PLANTONISTA")
   status             String  @default("ATIVO") // ATIVO | PENDENTE | BLOQUEADO

@@ -7,6 +7,7 @@ import { LogoutButton } from "@/components/LogoutButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { PushToggle } from "@/components/PushToggle";
 import { HospitalSwitcher } from "@/components/HospitalSwitcher";
+import { ProfileEditor } from "@/components/ProfileEditor";
 import { listUserHospitals } from "@/lib/hospital";
 import { labelForRole } from "@/lib/constants";
 import { can } from "@/lib/rbac";
@@ -19,13 +20,17 @@ export default async function PerfilPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const [recentAudit, hospitals] = await Promise.all([
+  const [recentAudit, hospitals, specialties] = await Promise.all([
     prisma.auditLog.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: "desc" },
       take: 8,
     }),
     listUserHospitals(user.id),
+    prisma.specialty.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
   ]);
 
   return (
@@ -38,12 +43,16 @@ export default async function PerfilPage() {
           <div className="min-w-0 flex-1">
             <h2 className="text-lg font-bold">{user.name}</h2>
             <p className="text-sm text-fg-muted">{user.email}</p>
+            {user.phone ? (
+              <p className="text-sm text-fg-muted">{user.phone}</p>
+            ) : null}
             <div className="mt-1 flex flex-wrap gap-2">
               <Badge color="primary">{labelForRole(user.role)}</Badge>
               {user.specialty ? (
                 <Badge>{user.specialty.name}</Badge>
               ) : null}
               {user.crm ? <Badge>{user.crm}</Badge> : null}
+              {user.rqe ? <Badge>RQE {user.rqe}</Badge> : null}
             </div>
           </div>
         </div>
@@ -59,6 +68,23 @@ export default async function PerfilPage() {
             Tema <ThemeToggle />
           </div>
         </div>
+      </Card>
+
+      <Card className="mb-5">
+        <CardHeader
+          title="Meus dados"
+          subtitle="Nome, CRM, RQE, telefone e especialidade"
+        />
+        <ProfileEditor
+          initial={{
+            name: user.name,
+            crm: user.crm,
+            rqe: user.rqe,
+            phone: user.phone,
+            specialtyId: user.specialtyId,
+          }}
+          specialties={specialties}
+        />
       </Card>
 
       <Card className="mb-5">
