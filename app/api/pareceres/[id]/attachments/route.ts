@@ -5,15 +5,21 @@ import { requireUser, badRequest, notFound } from "@/lib/api";
 import { audit } from "@/lib/audit";
 import { ATTACHMENT_KINDS, ATTACHMENT_KIND_LABELS } from "@/lib/constants";
 
+// Server-side cap on the stored data URI. Real files are read client-side
+// as data URLs and stored inline. In production this endpoint would instead
+// receive an S3/Supabase Storage object URL (see README) — kept inline here
+// so uploads work end-to-end without extra infrastructure.
+const MAX_DATAURL = 2_100_000; // ~1.5 MB file after base64 expansion
+
 const schema = z.object({
   kind: z.enum(ATTACHMENT_KINDS),
   fileName: z.string().min(1).max(200),
   url: z.string().optional(),
+  dataUrl: z.string().optional(),
+  mimeType: z.string().max(120).optional(),
+  size: z.number().int().nonnegative().optional(),
 });
 
-// NOTE: In production files are uploaded to S3-compatible storage and this
-// endpoint stores the resulting object URL. For the MVP we store a
-// reference so the case timeline and attachment list are fully functional.
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -28,7 +34,15 @@ export async function POST(
 
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return badRequest("Anexo inválido");
-  const { kind, fileName, url } = parsed.data;
+  const { kind, fileName, url, dataUrl, mimeType, size } = parsed.data;
+
+  if (dataUrl) {
+    if (!dataUrl.startsWith("data:"))
+      return badRequest("Arquivo inválido");
+    if (dataUrl.length > MAX_DATAURL)
+      return badRequest("Arquivo muito grande (máx. ~1,5 MB nesta demonstração).");
+  }
+  const storedUrl = dataUrl || url || "#";
 
   const attachment = await prisma.$transaction(async (tx) => {
     const a = await tx.attachment.create({
@@ -36,7 +50,9 @@ export async function POST(
         parecerId: id,
         kind,
         fileName,
-        url: url || "#",
+        url: storedUrl,
+        mimeType: mimeType || null,
+        size: size ?? null,
         uploadedById: user.id,
       },
     });
