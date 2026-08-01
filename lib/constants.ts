@@ -125,6 +125,16 @@ export const SHIFT_STATUS_LABELS: Record<ShiftStatus, string> = {
   OFF: "Não disponível",
 };
 
+// Situação do leito no inventário do hospital.
+export const BED_STATUSES = ["ATIVO", "MANUTENCAO", "DESATIVADO"] as const;
+export type BedStatus = (typeof BED_STATUSES)[number];
+
+export const BED_STATUS_LABELS: Record<BedStatus, string> = {
+  ATIVO: "Ativo",
+  MANUTENCAO: "Em manutenção",
+  DESATIVADO: "Desativado",
+};
+
 export const NOTICE_CATEGORIES = [
   "COMUNICADO",
   "PROTOCOLO",
