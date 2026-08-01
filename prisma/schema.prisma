@@ -34,6 +34,22 @@ model Hospital {
   calls        InstitutionalCall[]
   memberships  UserHospital[]
   specialties  HospitalSpecialty[]
+  beds         Bed[]
+}
+
+// Leito físico do hospital, agrupado por setor e unidade/enfermaria.
+model Bed {
+  id         String   @id @default(cuid())
+  hospitalId String
+  hospital   Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  sector     String // setor principal (SPA, Unidade 24h, Centro Cirúrgico…)
+  unit       String // sub-setor / enfermaria
+  code       String // identificador do leito (01, L01, BB4, 001…)
+  status     String   @default("ATIVO") // ATIVO | MANUTENCAO | DESATIVADO
+  createdAt  DateTime @default(now())
+
+  @@unique([hospitalId, sector, unit, code])
+  @@index([hospitalId])
 }
 
 // A specialty offered at a given hospital, with its coordinator and the
