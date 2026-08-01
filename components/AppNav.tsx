@@ -16,12 +16,14 @@ import {
   IconUser,
   IconPlus,
   IconHospital,
+  IconBed,
 } from "./icons";
 
 const NAV = [
   { href: "/inicio", label: "Início", Icon: IconHome },
   { href: "/pareceres", label: "Pareceres", Icon: IconClipboard },
   { href: "/plantao", label: "Plantão", Icon: IconPulse },
+  { href: "/leitos", label: "Leitos", Icon: IconBed },
   { href: "/dashboard", label: "Painel", Icon: IconChart },
   { href: "/perfil", label: "Perfil", Icon: IconUser },
 ];

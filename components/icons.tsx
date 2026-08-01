@@ -59,6 +59,13 @@ export const IconPlus = (p: Props) => (
   </svg>
 );
 
+export const IconBed = (p: Props) => (
+  <svg {...base(p)}>
+    <path d="M3 8v11M3 13h18v6M21 19v-4a3 3 0 0 0-3-3H10v4" />
+    <circle cx="6.5" cy="10.5" r="1.5" />
+  </svg>
+);
+
 export const IconHospital = (p: Props) => (
   <svg {...base(p)}>
     <path d="M4 21V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14" />
