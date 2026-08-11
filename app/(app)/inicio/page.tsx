@@ -12,6 +12,7 @@ import {
   IconArrowRight,
   IconAlert,
   IconBell,
+  IconClock,
 } from "@/components/icons";
 import { OPEN_STATUSES, NOTICE_CATEGORY_LABELS, type NoticeCategory } from "@/lib/constants";
 import { relativeTime } from "@/lib/format";
@@ -108,6 +109,18 @@ export default async function InicioPage() {
             <p className="text-sm text-fg-muted">
               {openCalls > 0 ? `${openCalls} em aberto` : "Solicitações com SLA"}
             </p>
+          </div>
+        </Link>
+        <Link
+          href="/ponto"
+          className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-4 shadow-sm transition hover:border-primary/50"
+        >
+          <span className="grid h-11 w-11 place-items-center rounded-xl bg-primary-soft text-primary">
+            <IconClock size={24} />
+          </span>
+          <div>
+            <p className="font-semibold">Ponto</p>
+            <p className="text-sm text-fg-muted">Entrada e saída do plantão</p>
           </div>
         </Link>
       </div>
