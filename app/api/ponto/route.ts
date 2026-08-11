@@ -74,20 +74,37 @@ export async function POST(req: Request) {
     },
   });
 
-  // Avalia a cerca (não bloqueia — apenas registra se estava dentro/fora).
+  // Avalia a cerca. Com a cerca ativa e configurada, o registro é BLOQUEADO
+  // fora do perímetro (ou se a localização não puder ser confirmada).
   let inside: boolean | null = null;
   let distance: number | null = null;
-  if (
-    hospital?.geofenceEnabled &&
-    hospital.geofenceLat != null &&
-    hospital.geofenceLng != null &&
-    lat != null &&
-    lng != null
-  ) {
+  const fenceActive =
+    Boolean(hospital?.geofenceEnabled) &&
+    hospital?.geofenceLat != null &&
+    hospital?.geofenceLng != null;
+  const radius = hospital?.geofenceRadiusM ?? 150;
+
+  if (fenceActive) {
+    if (lat == null || lng == null) {
+      return badRequest(
+        "Não foi possível confirmar sua localização. Ative o GPS e permita o acesso à localização para registrar o ponto.",
+      );
+    }
     distance = Math.round(
-      distanceMeters(lat, lng, hospital.geofenceLat, hospital.geofenceLng),
+      distanceMeters(lat, lng, hospital!.geofenceLat!, hospital!.geofenceLng!),
     );
-    inside = distance <= (hospital.geofenceRadiusM ?? 150);
+    inside = distance <= radius;
+    if (!inside) {
+      return NextResponse.json(
+        {
+          error: `Você está a ${distance} m do hospital (limite de ${radius} m). O registro só é permitido dentro da área.`,
+          outside: true,
+          distance,
+          radius,
+        },
+        { status: 403 },
+      );
+    }
   }
 
   const open = await prisma.timeSession.findFirst({

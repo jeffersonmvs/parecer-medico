@@ -38,7 +38,15 @@ type HS = {
   responderIds: string[];
 };
 type Config = {
-  hospital: { id: string; name: string; directorId: string | null };
+  hospital: {
+    id: string;
+    name: string;
+    directorId: string | null;
+    geofenceLat: number | null;
+    geofenceLng: number | null;
+    geofenceRadiusM: number | null;
+    geofenceEnabled: boolean;
+  };
   allSpecialties: SpecialtyRef[];
   doctors: Doctor[];
   specialties: HS[];
@@ -88,6 +96,7 @@ export function HospitalConfigurator({
       ) : (
         <div className="space-y-5">
           <DirectorCard config={data} onSaved={mutate} />
+          <GeofenceCard config={data} onSaved={mutate} />
           <SpecialtiesSection config={data} onChanged={mutate} />
         </div>
       )}
@@ -140,6 +149,133 @@ function DirectorCard({
         </div>
         <Button onClick={save} disabled={saving}>
           {saving ? <Spinner /> : <IconCheck size={16} />} Salvar
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+function GeofenceCard({
+  config,
+  onSaved,
+}: {
+  config: Config;
+  onSaved: () => void;
+}) {
+  const h = config.hospital;
+  const [lat, setLat] = useState(h.geofenceLat?.toString() ?? "");
+  const [lng, setLng] = useState(h.geofenceLng?.toString() ?? "");
+  const [radius, setRadius] = useState((h.geofenceRadiusM ?? 150).toString());
+  const [enabled, setEnabled] = useState(h.geofenceEnabled);
+  const [saving, setSaving] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  function useMyLocation() {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setMsg("Geolocalização indisponível neste dispositivo.");
+      return;
+    }
+    setLocating(true);
+    setMsg(null);
+    navigator.geolocation.getCurrentPosition(
+      (p) => {
+        setLat(p.coords.latitude.toFixed(6));
+        setLng(p.coords.longitude.toFixed(6));
+        setMsg(
+          `Localização capturada (precisão ~${Math.round(p.coords.accuracy)} m). Capture estando dentro do hospital.`,
+        );
+        setLocating(false);
+      },
+      () => {
+        setMsg("Não foi possível obter a localização. Permita o acesso ao GPS.");
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+    );
+  }
+
+  async function save() {
+    setSaving(true);
+    setMsg(null);
+    const latN = lat.trim() === "" ? null : Number(lat);
+    const lngN = lng.trim() === "" ? null : Number(lng);
+    if (enabled && (latN == null || lngN == null || Number.isNaN(latN) || Number.isNaN(lngN))) {
+      setMsg("Defina o centro (latitude/longitude) antes de ativar o bloqueio.");
+      setSaving(false);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/admin/hospitais/${h.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          geofenceLat: latN,
+          geofenceLng: lngN,
+          geofenceRadiusM: Number(radius) || 150,
+          geofenceEnabled: enabled,
+        }),
+      });
+      const d = await res.json();
+      if (!res.ok) {
+        setMsg(d.error ?? "Não foi possível salvar.");
+        return;
+      }
+      onSaved();
+      setMsg("Configuração salva.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader
+        title="Área do hospital (ponto)"
+        subtitle="Perímetro em que o registro de entrada/saída é permitido"
+      />
+      <div className="space-y-3 p-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="secondary" onClick={useMyLocation} disabled={locating}>
+            {locating ? <Spinner /> : <IconHospital size={16} />} Usar minha
+            localização atual
+          </Button>
+          <span className="text-xs text-fg-muted">
+            Toque estando <b>dentro</b> do hospital para fixar o centro.
+          </span>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Field label="Latitude">
+            <Input value={lat} onChange={(e) => setLat(e.target.value)} placeholder="-3.876543" />
+          </Field>
+          <Field label="Longitude">
+            <Input value={lng} onChange={(e) => setLng(e.target.value)} placeholder="-38.625432" />
+          </Field>
+          <Field label="Raio (metros)">
+            <Input
+              type="number"
+              min={20}
+              value={radius}
+              onChange={(e) => setRadius(e.target.value)}
+            />
+          </Field>
+        </div>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={(e) => setEnabled(e.target.checked)}
+            className="accent-[var(--primary)]"
+          />
+          Bloquear registro de ponto fora desta área
+        </label>
+        {msg ? (
+          <p className="rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm text-fg-muted">
+            {msg}
+          </p>
+        ) : null}
+        <Button onClick={save} disabled={saving}>
+          {saving ? <Spinner /> : <IconCheck size={16} />} Salvar área
         </Button>
       </div>
     </Card>

@@ -20,7 +20,15 @@ export async function GET(
 
   const hospital = await prisma.hospital.findUnique({
     where: { id: hospitalId },
-    select: { id: true, name: true, directorId: true },
+    select: {
+      id: true,
+      name: true,
+      directorId: true,
+      geofenceLat: true,
+      geofenceLng: true,
+      geofenceRadiusM: true,
+      geofenceEnabled: true,
+    },
   });
   if (!hospital) return notFound("Hospital não encontrado");
 
@@ -75,9 +83,14 @@ export async function GET(
 
 const patchSchema = z.object({
   directorId: z.string().nullable().optional(),
+  geofenceLat: z.number().min(-90).max(90).nullable().optional(),
+  geofenceLng: z.number().min(-180).max(180).nullable().optional(),
+  geofenceRadiusM: z.number().int().min(20).max(5000).optional(),
+  geofenceEnabled: z.boolean().optional(),
 });
 
-// Set the hospital's clinical director (4th escalation level).
+// Set the hospital's clinical director (4th escalation level) and the
+// geofence used to gate the time-clock (ponto).
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ hospitalId: string }> },
@@ -89,23 +102,42 @@ export async function PATCH(
   const { hospitalId } = await params;
   const parsed = patchSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return badRequest("Dados inválidos");
+  const d = parsed.data;
 
-  const directorId = parsed.data.directorId || null;
-  if (directorId) {
+  if (d.directorId) {
     const ok = await prisma.user.findUnique({
-      where: { id: directorId },
+      where: { id: d.directorId },
       select: { id: true },
     });
     if (!ok) return badRequest("Diretor inválido");
   }
 
+  // Para ligar a cerca, é obrigatório ter um centro definido.
+  const current = await prisma.hospital.findUnique({
+    where: { id: hospitalId },
+    select: { geofenceLat: true, geofenceLng: true },
+  });
+  const finalLat = d.geofenceLat === undefined ? current?.geofenceLat : d.geofenceLat;
+  const finalLng = d.geofenceLng === undefined ? current?.geofenceLng : d.geofenceLng;
+  if (d.geofenceEnabled === true && (finalLat == null || finalLng == null)) {
+    return badRequest(
+      "Defina o centro da área (capture a localização no hospital) antes de ativar o bloqueio.",
+    );
+  }
+
   await prisma.hospital.update({
     where: { id: hospitalId },
-    data: { directorId },
+    data: {
+      directorId: d.directorId === undefined ? undefined : d.directorId || null,
+      geofenceLat: d.geofenceLat === undefined ? undefined : d.geofenceLat,
+      geofenceLng: d.geofenceLng === undefined ? undefined : d.geofenceLng,
+      geofenceRadiusM: d.geofenceRadiusM ?? undefined,
+      geofenceEnabled: d.geofenceEnabled ?? undefined,
+    },
   });
   await audit({
     userId: auth.user.id,
-    action: "hospital.director.set",
+    action: "hospital.update",
     entityType: "Hospital",
     entityId: hospitalId,
     request: req,
