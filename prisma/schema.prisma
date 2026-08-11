@@ -28,13 +28,63 @@ model Hospital {
   directorId String?
   director   User?   @relation("HospitalDirector", fields: [directorId], references: [id])
 
-  users        User[]
-  pareceres    Parecer[]
-  shifts       Shift[]
-  calls        InstitutionalCall[]
-  memberships  UserHospital[]
-  specialties  HospitalSpecialty[]
-  beds         Bed[]
+  // Cerca virtual (geofence) para o ponto: centro + raio (m). Configurável e
+  // desligável — quando desligada, o ponto registra a localização sem validar.
+  geofenceLat     Float?
+  geofenceLng     Float?
+  geofenceRadiusM Int?     @default(150)
+  geofenceEnabled Boolean  @default(false)
+
+  users         User[]
+  pareceres     Parecer[]
+  shifts        Shift[]
+  calls         InstitutionalCall[]
+  memberships   UserHospital[]
+  specialties   HospitalSpecialty[]
+  beds          Bed[]
+  payCategories PayCategory[]
+  timeSessions  TimeSession[]
+}
+
+// Categoria de remuneração (valor/hora), configurável e atribuível a cada
+// médico. Ex.: "Clínico Eixo Vermelho", "Cirurgião", "Anestesista".
+model PayCategory {
+  id         String   @id @default(cuid())
+  hospitalId String
+  hospital   Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  name       String
+  hourlyRate Float    @default(0) // R$ por hora
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  users User[]
+
+  @@index([hospitalId])
+}
+
+// Registro de ponto (entrada/saída) com geolocalização — controle interno de
+// horas e custos (não é o ponto legal/oficial).
+model TimeSession {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hospitalId String
+  hospital   Hospital @relation(fields: [hospitalId], references: [id])
+
+  startedAt   DateTime  @default(now())
+  startLat    Float?
+  startLng    Float?
+  startInside Boolean? // dentro da cerca no momento da entrada (se ativa)
+
+  endedAt   DateTime?
+  endLat    Float?
+  endLng    Float?
+  endInside Boolean?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([hospitalId])
 }
 
 // Leito físico do hospital, agrupado por setor e unidade/enfermaria.
@@ -134,6 +184,12 @@ model User {
 
   hospitalId String?
   hospital   Hospital? @relation(fields: [hospitalId], references: [id])
+
+  // Categoria de remuneração (valor/hora) para o relatório de custos.
+  payCategoryId String?
+  payCategory   PayCategory? @relation(fields: [payCategoryId], references: [id])
+
+  timeSessions TimeSession[]
 
   requestedPareceres Parecer[]      @relation("Requester")
   assignedPareceres  Parecer[]      @relation("Assignee")
