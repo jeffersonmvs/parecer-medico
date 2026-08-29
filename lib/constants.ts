@@ -10,6 +10,8 @@ export const ROLES = [
   "MEDICO_ASSISTENTE",
   "MEDICO_PLANTONISTA",
   "RESIDENTE",
+  "ENFERMEIRA",
+  "NUMED",
 ] as const;
 export type Role = (typeof ROLES)[number];
 
@@ -22,6 +24,26 @@ export const ROLE_LABELS: Record<Role, string> = {
   MEDICO_ASSISTENTE: "Médico Assistente",
   MEDICO_PLANTONISTA: "Médico Plantonista",
   RESIDENTE: "Residente",
+  ENFERMEIRA: "Enfermeira",
+  NUMED: "NUMED (Núcleo Médico)",
+};
+
+// Turnos e situação do registro de execução de plantão (módulo NUMED).
+export const TURNOS = ["D", "N"] as const;
+export type Turno = (typeof TURNOS)[number];
+export const TURNO_LABELS: Record<Turno, string> = { D: "Diurno", N: "Noturno" };
+
+export const MEDICO_ORIGENS = [
+  "efetivo",
+  "cooperativa",
+  "novo_contratado",
+  "permuta",
+] as const;
+export const MEDICO_ORIGEM_LABELS: Record<string, string> = {
+  efetivo: "Efetivo",
+  cooperativa: "Cooperativa",
+  novo_contratado: "Novo contratado",
+  permuta: "Permuta",
 };
 
 export const PRIORITIES = ["ROTINA", "URGENTE", "EMERGENCIA"] as const;
