@@ -29,9 +29,28 @@ export const ROLE_LABELS: Record<Role, string> = {
 };
 
 // Turnos e situação do registro de execução de plantão (módulo NUMED).
-export const TURNOS = ["D", "N"] as const;
+//
+// Quatro turnos possíveis, cada um com hora de início fixa (BRT). O médico
+// deve declarar a presença em até 2h após o início da jornada.
+//   M  07:00–13:00   (registra até 09:00)
+//   T  13:00–19:00   (registra até 15:00)
+//   D  07:00–19:00   (registra até 09:00)
+//   N  19:00–07:00   (registra até 21:00)
+export const TURNOS = ["M", "T", "D", "N"] as const;
 export type Turno = (typeof TURNOS)[number];
-export const TURNO_LABELS: Record<Turno, string> = { D: "Diurno", N: "Noturno" };
+export const TURNO_LABELS: Record<Turno, string> = {
+  M: "Manhã (07h–13h)",
+  T: "Tarde (13h–19h)",
+  D: "Diurno (07h–19h)",
+  N: "Noturno (19h–07h)",
+};
+
+// Hora de início/fim (BRT) de cada turno. O fim do noturno cai no dia seguinte.
+export const TURNO_START_HOUR: Record<Turno, number> = { M: 7, T: 13, D: 7, N: 19 };
+export const TURNO_END_HOUR: Record<Turno, number> = { M: 13, T: 19, D: 19, N: 7 };
+
+// Prazo (em horas) para o médico declarar a presença após o início do turno.
+export const DECLARACAO_JANELA_HORAS = 2;
 
 export const MEDICO_ORIGENS = [
   "efetivo",

@@ -5,8 +5,23 @@ import { requireUser, badRequest, forbidden } from "@/lib/api";
 import { can } from "@/lib/rbac";
 import { audit } from "@/lib/audit";
 import { distanceMeters } from "@/lib/geo";
-import { registryDate, prazoFor, guessTurno } from "@/lib/numed";
-import { TURNO_LABELS } from "@/lib/constants";
+import {
+  registryDate,
+  prazoFor,
+  guessTurno,
+  declarationWindow,
+  isDeclarationOpen,
+  openTurnos,
+} from "@/lib/numed";
+import { TURNO_LABELS, TURNOS } from "@/lib/constants";
+
+function hhmm(d: Date): string {
+  return d.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
+  });
+}
 
 // Registro de Execução de Plantão — declaração do próprio médico.
 //
@@ -41,11 +56,20 @@ export async function GET() {
     select: { geofenceEnabled: true, geofenceRadiusM: true },
   });
 
+  const open = openTurnos();
+  const turnos = TURNOS.map((t) => ({
+    value: t,
+    label: TURNO_LABELS[t],
+    open: open.includes(t),
+    closesAt: declarationWindow(t).closesAt,
+  }));
+
   if (!roster) {
     return NextResponse.json({
       enrolled: false,
       sectors: [],
       turno: guessTurno(),
+      turnos,
       today: [],
     });
   }
@@ -74,13 +98,16 @@ export async function GET() {
     doctorName: roster.name,
     sectors,
     turno: guessTurno(),
+    turnos,
     geofenceEnabled: Boolean(hospital?.geofenceEnabled),
     geofenceRadiusM: hospital?.geofenceRadiusM ?? null,
     today: presences.map((p) => ({
       sectorId: p.registry.sectorId,
       sectorName: p.registry.sector.name,
       turno: p.registry.turno,
-      turnoLabel: TURNO_LABELS[p.registry.turno as "D" | "N"] ?? p.registry.turno,
+      turnoLabel:
+        TURNO_LABELS[p.registry.turno as keyof typeof TURNO_LABELS] ??
+        p.registry.turno,
       selfAt: p.selfAt,
       selfInside: p.selfInside,
       nurseConfirmed: p.nurseConfirmed,
@@ -92,7 +119,7 @@ export async function GET() {
 
 const schema = z.object({
   sectorId: z.string().min(1),
-  turno: z.enum(["D", "N"]),
+  turno: z.enum(TURNOS),
   lat: z.number().optional(),
   lng: z.number().optional(),
 });
@@ -117,6 +144,16 @@ export async function POST(req: Request) {
   }
   const belongs = roster.sectors.some((s) => s.sectorId === sectorId);
   if (!belongs) return forbidden("Você não atua neste setor.");
+
+  // A presença deve ser declarada em até 2h após o início da jornada.
+  if (!isDeclarationOpen(turno)) {
+    const w = declarationWindow(turno);
+    return badRequest(
+      `Fora do prazo de declaração do turno ${TURNO_LABELS[turno]}. ` +
+        `A declaração é permitida das ${hhmm(w.opensAt)} às ${hhmm(w.closesAt)} ` +
+        `(até 2h após o início às ${hhmm(w.startsAt)}).`,
+    );
+  }
 
   const sector = await prisma.sector.findFirst({
     where: { id: sectorId, hospitalId },

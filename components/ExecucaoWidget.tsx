@@ -18,11 +18,19 @@ type TodayPresence = {
   status: string;
 };
 
+type TurnoOption = {
+  value: string;
+  label: string;
+  open: boolean;
+  closesAt: string;
+};
+
 type Data = {
   enrolled: boolean;
   doctorName?: string;
   sectors: { id: string; name: string }[];
-  turno: "D" | "N";
+  turno: string;
+  turnos: TurnoOption[];
   geofenceEnabled?: boolean;
   geofenceRadiusM?: number | null;
   today: TodayPresence[];
@@ -71,7 +79,7 @@ function StageBadge({
 export function ExecucaoWidget() {
   const { data, mutate, isLoading } = useSWR<Data>("/api/execucao", fetcher);
   const [sectorId, setSectorId] = useState("");
-  const [turno, setTurno] = useState<"D" | "N">("D");
+  const [turno, setTurno] = useState<string>("D");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -171,25 +179,36 @@ export function ExecucaoWidget() {
         </select>
 
         <label className="mt-3 block text-xs font-medium text-fg-muted">
-          Turno
+          Turno que irá cumprir
         </label>
         <div className="mt-1 grid grid-cols-2 gap-2">
-          {(["D", "N"] as const).map((t) => (
+          {data.turnos.map((t) => (
             <button
-              key={t}
+              key={t.value}
               type="button"
-              onClick={() => setTurno(t)}
+              onClick={() => setTurno(t.value)}
               className={
-                "rounded-xl border px-3 py-2.5 text-sm font-medium transition " +
-                (turno === t
+                "rounded-xl border px-3 py-2.5 text-left text-sm font-medium transition " +
+                (turno === t.value
                   ? "border-primary bg-primary-soft text-primary"
                   : "border-line bg-surface-2 text-fg-muted")
               }
             >
-              {t === "D" ? "Diurno" : "Noturno"}
+              <span className="block">{t.label}</span>
+              <span
+                className={
+                  "mt-0.5 block text-[11px] font-normal " +
+                  (t.open ? "text-routine" : "text-fg-muted")
+                }
+              >
+                {t.open ? "Aberto para declaração" : "Fora do prazo agora"}
+              </span>
             </button>
           ))}
         </div>
+        <p className="mt-2 text-[11px] text-fg-muted">
+          A presença deve ser declarada em até 2h após o início da jornada.
+        </p>
 
         <Button className="mt-4 w-full" disabled={busy} onClick={declare}>
           {busy ? <Spinner /> : <IconCheck size={18} />} Estou presente

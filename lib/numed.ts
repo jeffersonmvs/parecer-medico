@@ -43,11 +43,75 @@ export function prazoFor(date: Date): Date {
   return new Date(Date.UTC(y, m, d + 1, 12 + 3, 0, 0));
 }
 
+import {
+  TURNOS,
+  TURNO_START_HOUR,
+  DECLARACAO_JANELA_HORAS,
+  type Turno,
+} from "./constants";
+
+const HOUR_MS = 60 * 60 * 1000;
+
+/** Instante UTC correspondente a `hour:00` BRT na data-calendário informada. */
+function brtInstant(parts: { y: number; m: number; d: number }, hour: number): Date {
+  return new Date(Date.UTC(parts.y, parts.m, parts.d, hour + 3, 0, 0));
+}
+
 /**
- * Turno provável a partir do horário BRT: Diurno das 07:00 às 18:59,
- * Noturno caso contrário. É apenas o padrão sugerido — o médico confirma.
+ * Janela em que o médico pode declarar a presença de um turno: do início da
+ * jornada (com uma tolerância de 1h para quem chega mais cedo) até 2h após o
+ * início. Calculada na data-calendário BRT de `instant`.
  */
-export function guessTurno(instant: Date = new Date()): "D" | "N" {
+export function declarationWindow(
+  turno: Turno,
+  instant: Date = new Date(),
+): { opensAt: Date; closesAt: Date; startsAt: Date } {
+  const parts = brtDateParts(instant);
+  const startsAt = brtInstant(parts, TURNO_START_HOUR[turno]);
+  return {
+    startsAt,
+    opensAt: new Date(startsAt.getTime() - 1 * HOUR_MS),
+    closesAt: new Date(startsAt.getTime() + DECLARACAO_JANELA_HORAS * HOUR_MS),
+  };
+}
+
+/** A janela de declaração do turno está aberta neste instante? */
+export function isDeclarationOpen(turno: Turno, instant: Date = new Date()): boolean {
+  const { opensAt, closesAt } = declarationWindow(turno, instant);
+  const t = instant.getTime();
+  return t >= opensAt.getTime() && t <= closesAt.getTime();
+}
+
+/** Turnos cuja janela de declaração está aberta agora. */
+export function openTurnos(instant: Date = new Date()): Turno[] {
+  return TURNOS.filter((t) => isDeclarationOpen(t, instant));
+}
+
+/**
+ * Turnos em andamento neste instante e a data-calendário do plantão a que
+ * pertencem. Usado no painel de "presentes agora". O noturno atravessa a
+ * meia-noite: das 19:00 pertence ao dia atual; da 00:00 às 07:00 pertence ao
+ * dia anterior.
+ */
+export function activeTurnosNow(
+  instant: Date = new Date(),
+): { turno: Turno; data: Date }[] {
   const { hour } = brtDateParts(instant);
-  return hour >= 7 && hour < 19 ? "D" : "N";
+  const today = registryDate(instant);
+  const yesterday = new Date(today.getTime() - 24 * HOUR_MS);
+  const out: { turno: Turno; data: Date }[] = [];
+  if (hour >= 7 && hour < 13) out.push({ turno: "M", data: today });
+  if (hour >= 13 && hour < 19) out.push({ turno: "T", data: today });
+  if (hour >= 7 && hour < 19) out.push({ turno: "D", data: today });
+  if (hour >= 19) out.push({ turno: "N", data: today });
+  if (hour < 7) out.push({ turno: "N", data: yesterday });
+  return out;
+}
+
+/**
+ * Turno sugerido para a declaração: o primeiro cuja janela está aberta agora
+ * (ex.: às 08:00 sugere Manhã). Sem janela aberta, cai no diurno.
+ */
+export function guessTurno(instant: Date = new Date()): Turno {
+  return openTurnos(instant)[0] ?? "D";
 }
