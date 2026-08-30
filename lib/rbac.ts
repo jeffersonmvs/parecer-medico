@@ -12,7 +12,12 @@ export type Capability =
   | "escalation.configure"
   | "shift.manageOthers"
   | "users.manage"
-  | "hospital.configure";
+  | "hospital.configure"
+  // Registro de Execução de Plantão (NUMED)
+  | "execucao.declarar" // médico declara a própria presença
+  | "execucao.confirmar" // enfermeira confirma
+  | "execucao.homologar" // coordenador/direção homologa
+  | "execucao.auditar"; // NUMED audita / fecha o mês
 
 const MATRIX: Record<Role, Capability[]> = {
   ADMIN: [
@@ -25,6 +30,10 @@ const MATRIX: Record<Role, Capability[]> = {
     "shift.manageOthers",
     "users.manage",
     "hospital.configure",
+    "execucao.declarar",
+    "execucao.confirmar",
+    "execucao.homologar",
+    "execucao.auditar",
   ],
   DIRECAO_CLINICA: [
     "parecer.create",
@@ -35,6 +44,8 @@ const MATRIX: Record<Role, Capability[]> = {
     "escalation.configure",
     "shift.manageOthers",
     "hospital.configure",
+    "execucao.homologar",
+    "execucao.auditar",
   ],
   DIRECAO_TECNICA: [
     "notice.publish",
@@ -55,10 +66,14 @@ const MATRIX: Record<Role, Capability[]> = {
     "parecer.act",
     "notice.publish",
     "escalation.configure",
+    "execucao.declarar",
+    "execucao.homologar",
   ],
-  MEDICO_ASSISTENTE: ["parecer.create", "parecer.act"],
-  MEDICO_PLANTONISTA: ["parecer.create", "parecer.act"],
-  RESIDENTE: ["parecer.create", "parecer.act"],
+  MEDICO_ASSISTENTE: ["parecer.create", "parecer.act", "execucao.declarar"],
+  MEDICO_PLANTONISTA: ["parecer.create", "parecer.act", "execucao.declarar"],
+  RESIDENTE: ["parecer.create", "parecer.act", "execucao.declarar"],
+  ENFERMEIRA: ["execucao.confirmar"],
+  NUMED: ["dashboard.executive", "execucao.auditar", "execucao.homologar"],
 };
 
 export function can(role: string | undefined, cap: Capability): boolean {

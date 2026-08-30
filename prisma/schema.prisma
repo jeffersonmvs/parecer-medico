@@ -44,6 +44,121 @@ model Hospital {
   beds          Bed[]
   payCategories PayCategory[]
   timeSessions  TimeSession[]
+  sectors       Sector[]
+  shiftDoctors  ShiftDoctor[]
+  registries    ShiftRegistry[]
+}
+
+// ================= NUMED — Registro de Execução de Plantão =================
+// Comprova EXECUÇÃO de serviço (não jornada). Sem horário de entrada/saída.
+
+model Sector {
+  id            String   @id @default(cuid())
+  hospitalId    String
+  hospital      Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  name          String
+  coordinatorId String?
+  coordinator   User?    @relation("SectorCoordinator", fields: [coordinatorId], references: [id])
+  limiteAvulso  Float    @default(0.20) // proporção de avulsos/mês que dispara alerta
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  doctors    ShiftDoctorSector[]
+  registries ShiftRegistry[]
+
+  @@index([hospitalId])
+}
+
+model ShiftDoctor {
+  id         String   @id @default(cuid())
+  hospitalId String
+  hospital   Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  name       String
+  crm        String?
+  origem     String   @default("efetivo") // efetivo|cooperativa|novo_contratado|permuta
+  status     String   @default("ativo") // ativo|pendente|recusado|inativo
+  userId     String? // vínculo ao User quando o médico também é usuário do app
+  user       User?    @relation("DoctorUser", fields: [userId], references: [id])
+  createdAt  DateTime @default(now())
+
+  sectors   ShiftDoctorSector[]
+  presences ShiftPresence[]
+
+  @@index([hospitalId])
+  @@index([userId])
+}
+
+model ShiftDoctorSector {
+  shiftDoctorId String
+  shiftDoctor   ShiftDoctor @relation(fields: [shiftDoctorId], references: [id], onDelete: Cascade)
+  sectorId      String
+  sector        Sector      @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+
+  @@id([shiftDoctorId, sectorId])
+  @@index([sectorId])
+}
+
+model ShiftRegistry {
+  id         String   @id @default(cuid())
+  hospitalId String
+  hospital   Hospital @relation(fields: [hospitalId], references: [id])
+  sectorId   String
+  sector     Sector   @relation(fields: [sectorId], references: [id])
+  data       DateTime @db.Date
+  turno      String // D | N
+  status     String   @default("aberto") // aberto|confirmado|homologado|divergente|expirado
+  prazo      DateTime // D+1 12:00 America/Sao_Paulo
+  createdAt  DateTime @default(now())
+
+  presences   ShiftPresence[]
+  divergences ShiftDivergence[]
+
+  @@unique([sectorId, data, turno])
+  @@index([hospitalId])
+}
+
+model ShiftPresence {
+  id            String      @id @default(cuid())
+  registryId    String
+  registry      ShiftRegistry @relation(fields: [registryId], references: [id], onDelete: Cascade)
+  shiftDoctorId String
+  shiftDoctor   ShiftDoctor @relation(fields: [shiftDoctorId], references: [id])
+  fonte         String      @default("lista") // lista | avulso
+
+  // 1) médico declara a própria presença (com geolocalização)
+  selfDeclared Boolean   @default(false)
+  selfAt       DateTime?
+  selfLat      Float?
+  selfLng      Float?
+  selfInside   Boolean?
+  selfById     String? // User (o próprio médico) que declarou
+
+  // 2) enfermeira confirma
+  nurseConfirmed Boolean?
+  nurseById      String?
+  nurseAt        DateTime?
+
+  // 3) coordenador homologa
+  coordConfirmed Boolean?
+  coordById      String?
+  coordAt        DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@unique([registryId, shiftDoctorId])
+  @@index([registryId])
+}
+
+model ShiftDivergence {
+  id         String        @id @default(cuid())
+  registryId String
+  registry   ShiftRegistry @relation(fields: [registryId], references: [id], onDelete: Cascade)
+  tipo       String // inclusao|exclusao|prazo|avulso_pendente|avulso_excesso|sem_declaracao|nao_confirmado
+  detalhe    String?
+  resolvido  Boolean       @default(false)
+  createdAt  DateTime      @default(now())
+
+  @@index([registryId])
 }
 
 // Categoria de remuneração (valor/hora), configurável e atribuível a cada
@@ -205,6 +320,8 @@ model User {
   coordinatorOf      HospitalSpecialty[] @relation("SpecialtyCoordinator")
   responderOf        ParecerResponder[]  @relation("Responder")
   directorOf         Hospital[]          @relation("HospitalDirector")
+  sectorsCoordinated Sector[]            @relation("SectorCoordinator")
+  doctorRoster       ShiftDoctor[]       @relation("DoctorUser")
 }
 
 // Hospitals a user may log into (the system is multi-hospital).
